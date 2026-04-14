@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Детский массажист Оксана — выезд на дом (0–1,5 лет)</title>
+    <meta
+      name="description"
+      content="Бережный детский массаж с опытом 20 лет. Работа с детьми 0–1,5 лет, выезд на дом. Консультация и курс массажа. Запись онлайн."
+    />
+
+    <meta property="og:title" content="Детский массажист Оксана" />
+    <meta
+      property="og:description"
+      content="Бережный детский массаж с опытом 20 лет. Выезд на дом. Запись онлайн."
+    />
+    <meta property="og:type" content="website" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Commissioner:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <canvas class="shader-bg" id="shaderBg" aria-hidden="true"></canvas>
+    <header class="header">
+      <div class="container header__inner">
+        <a class="brand" href="#top" aria-label="На главную">
+          <span class="brand__dot" aria-hidden="true"></span>
+          <span class="brand__text">Оксана</span>
+          <span class="brand__sub">детский массажист</span>
+        </a>
+
+        <nav class="nav" aria-label="Навигация">
+          <a class="nav__link" href="#about">Обо мне</a>
+          <a class="nav__link" href="#services">Услуги</a>
+          <a class="nav__link" href="#how">Как проходит</a>
+          <a class="nav__link nav__link--cta" href="#form">Записаться</a>
+          <button class="theme-toggle" type="button" id="themeToggle" aria-label="Переключить тему" title="Переключить тему">
+            <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M12 18.25a6.25 6.25 0 1 1 0-12.5a6.25 6.25 0 0 1 0 12.5ZM12 1.5a.9.9 0 0 1 .9.9v1.7a.9.9 0 1 1-1.8 0V2.4a.9.9 0 0 1 .9-.9ZM12 19.9a.9.9 0 0 1 .9.9v1.7a.9.9 0 1 1-1.8 0v-1.7a.9.9 0 0 1 .9-.9ZM3.2 12a.9.9 0 0 1 .9-.9h1.7a.9.9 0 1 1 0 1.8H4.1a.9.9 0 0 1-.9-.9Zm15 0a.9.9 0 0 1 .9-.9h1.7a.9.9 0 1 1 0 1.8h-1.7a.9.9 0 0 1-.9-.9ZM4.53 4.53a.9.9 0 0 1 1.27 0l1.2 1.2a.9.9 0 1 1-1.27 1.27l-1.2-1.2a.9.9 0 0 1 0-1.27Zm12.27 12.27a.9.9 0 0 1 1.27 0l1.2 1.2a.9.9 0 1 1-1.27 1.27l-1.2-1.2a.9.9 0 0 1 0-1.27ZM19.47 4.53a.9.9 0 0 1 0 1.27l-1.2 1.2a.9.9 0 0 1-1.27-1.27l1.2-1.2a.9.9 0 0 1 1.27 0ZM7.2 16.8a.9.9 0 0 1 0 1.27l-1.2 1.2a.9.9 0 1 1-1.27-1.27l1.2-1.2a.9.9 0 0 1 1.27 0Z"
+              />
+            </svg>
+            <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M21 15.2a.95.95 0 0 0-1.18-.57A7.5 7.5 0 0 1 9.37 4.18A.95.95 0 0 0 8.24 3A9.5 9.5 0 1 0 21 15.2Z"
+              />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="liquid-ether" id="liquidEther" aria-hidden="true"></div>
+        <div class="container hero__inner">
+          <div class="hero__text">
+            <p class="pill">Выезд на дом • дети 0–1,5 лет • 20 лет опыта</p>
+            <h1>Бережный детский массаж с заботой и спокойствием для мамы</h1>
+            <p class="lead">
+              Помогаю малышу развиваться гармонично, мягко корректирую тонус и
+              поддерживаю родителей понятными рекомендациями.
+            </p>
+
+            <div class="hero__actions">
+              <button class="btn" type="button" data-scroll-to="#form" data-service="Массаж">
+                Запись на массаж
+              </button>
+              <button class="btn btn--secondary" type="button" data-scroll-to="#form" data-service="Консультация">
+                Запись на консультацию
+              </button>
+            </div>
+
+            <ul class="hero__bullets" aria-label="Коротко о работе">
+              <li>Без стресса и слёз — ориентируюсь на состояние ребёнка</li>
+              <li>Объясняю родителям простыми словами “что и почему”</li>
+              <li>Остаюсь на связи после курса</li>
+            </ul>
+          </div>
+
+          <div class="hero__media" aria-label="Фото специалиста">
+            <img src="./Oxana.jpg" alt="Оксана — детский массажист" loading="eager" />
+          </div>
+        </div>
+      </section>
+
+      <section id="about" class="section">
+        <div class="container">
+          <h2>Обо мне</h2>
+
+          <div class="cards">
+            <article class="card card--wide">
+              <p>
+                Я — Оксана, детский массажист с более чем 20-летним опытом работы
+                с малышами от рождения до 1,5 лет.
+              </p>
+              <p>
+                Мой путь начался с практики в медицинском центре, где я впервые
+                взяла на руки новорождённого ребёнка — и поняла, что хочу
+                помогать самым маленьким расти здоровыми и гармоничными.
+              </p>
+              <p class="muted">
+                Доп. квалификация: детский медицинский массаж, грудничковое
+                плавание, фитбол-кинезитерапия, патронаж новорождённых.
+              </p>
+            </article>
+          </div>
+
+          <div class="cards">
+            <article class="card">
+              <h3>Мой подход</h3>
+              <p>
+                Работаю мягко и бережно, без стресса, ориентируясь на состояние
+                ребёнка. На каждом шаге объясняю родителям, что делаем и зачем.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Почему мне доверяют</h3>
+              <p>
+                Я мама двоих детей и понимаю тревоги родителей. Поддерживаю и
+                даю уверенность, остаюсь на связи после курса.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Моя миссия</h3>
+              <p>
+                Помочь родителям не упустить важные моменты в развитии малыша и
+                чувствовать, что они всё делают правильно.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--alt">
+        <div class="container">
+          <h2>Когда стоит обратиться</h2>
+          <div class="cards">
+            <div class="card">Колики, беспокойный сон</div>
+            <div class="card">Гипо- или гипертонус</div>
+            <div class="card">Задержка развития</div>
+            <div class="card">Подготовка к ползанию и ходьбе</div>
+            <div class="card">Страх навредить ребёнку</div>
+            <div class="card">Неуверенность в уходе</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="services" class="section">
+        <div class="container">
+          <h2>Услуги</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Патронаж новорождённого</h3>
+              <p>Поддержка с первых дней жизни малыша.</p>
+              <button class="link" type="button" data-scroll-to="#form" data-service="Патронаж">
+                Записаться
+              </button>
+            </article>
+            <article class="card">
+              <h3>Курс массажа</h3>
+              <p>10 сеансов для гармоничного развития.</p>
+              <button class="link" type="button" data-scroll-to="#form" data-service="Курс массажа">
+                Записаться
+              </button>
+            </article>
+            <article class="card">
+              <h3>Консультация</h3>
+              <p>Ответы на вопросы и рекомендации.</p>
+              <button class="link" type="button" data-scroll-to="#form" data-service="Консультация">
+                Записаться
+              </button>
+            </article>
+            <article class="card">
+              <h3>Обучение родителей</h3>
+              <p>Научу безопасным приёмам массажа.</p>
+              <button class="link" type="button" data-scroll-to="#form" data-service="Обучение родителей">
+                Записаться
+              </button>
+            </article>
+            <article class="card">
+              <h3>Экстренный выезд</h3>
+              <p>Когда нужна помощь здесь и сейчас.</p>
+              <button class="link" type="button" data-scroll-to="#form" data-service="Экстренный выезд">
+                Записаться
+              </button>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="how" class="section section--alt">
+        <div class="container">
+          <h2>Как проходит работа</h2>
+          <div class="cards">
+            <div class="card">Знакомство и диагностика</div>
+            <div class="card">Индивидуальный план</div>
+            <div class="card">Бережный массаж + фитбол</div>
+            <div class="card">Обучение родителей</div>
+            <div class="card">Поддержка после курса</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <h2>Результат</h2>
+          <div class="cards">
+            <div class="card">Спокойный ребёнок</div>
+            <div class="card">Улучшение сна</div>
+            <div class="card">Снижение колик</div>
+            <div class="card">Гармоничное развитие</div>
+            <div class="card">Уверенность родителей</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="form" class="section section--form">
+        <div class="container">
+          <div class="form-grid">
+            <div class="form-grid__text">
+              <h2>Записаться</h2>
+              <p class="muted">
+                Оставьте контакты — я напишу/позвоню и подберу удобное время.
+                Заявка сохраняется только в вашем браузере (это демо-лендинг).
+              </p>
+              <div class="mini">
+                <div class="mini__item">
+                  <div class="mini__label">География</div>
+                  <div class="mini__value">Москва и МО</div>
+                </div>
+                <div class="mini__item">
+                  <div class="mini__label">Возраст</div>
+                  <div class="mini__value">0–1,5 лет</div>
+                </div>
+              </div>
+            </div>
+
+            <form id="leadForm" class="form" novalidate>
+              <input type="hidden" name="service" id="service" value="Массаж" />
+
+              <label class="field">
+                <span class="field__label">Ваше имя</span>
+                <input
+                  name="name"
+                  id="name"
+                  type="text"
+                  placeholder="Например, Анна"
+                  autocomplete="name"
+                  required
+                  minlength="2"
+                />
+                <span class="field__error" id="nameError" aria-live="polite"></span>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Телефон</span>
+                <input
+                  name="phone"
+                  id="phone"
+                  type="tel"
+                  placeholder="+7 (999) 123-45-67"
+                  autocomplete="tel"
+                  required
+                  inputmode="tel"
+                />
+                <span class="field__error" id="phoneError" aria-live="polite"></span>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Возраст ребёнка</span>
+                <input
+                  name="age"
+                  id="age"
+                  type="text"
+                  placeholder="Например, 3 месяца"
+                  autocomplete="off"
+                />
+              </label>
+
+              <button class="btn btn--wide" type="submit">Отправить заявку</button>
+
+              <p class="muted small">
+                Нажимая «Отправить заявку», вы соглашаетесь на обработку данных
+                для обратной связи.
+              </p>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <div>Москва и Московская область</div>
+        <div class="muted">Детский массажист Оксана</div>
+        <button class="link" type="button" id="showLeads">Показать сохранённые заявки</button>
+      </div>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <dialog class="dialog" id="leadsDialog" aria-label="Сохранённые заявки">
+      <div class="dialog__head">
+        <h3 class="dialog__title">Сохранённые заявки</h3>
+        <button class="icon-btn" type="button" id="closeDialog" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="dialog__body">
+        <div class="muted small" id="leadsHint"></div>
+        <pre class="dialog__pre" id="leadsPre"></pre>
+      </div>
+      <div class="dialog__actions">
+        <button class="btn btn--secondary" type="button" id="clearLeads">Очистить</button>
+        <button class="btn" type="button" id="copyLeads">Скопировать</button>
+      </div>
+    </dialog>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
+
