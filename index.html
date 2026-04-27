@@ -89,7 +89,7 @@
           </div>
 
           <div class="hero__media" aria-label="Фото специалиста">
-            <img src="./Oxana.jpg" alt="Оксана — детский массажист" loading="eager" />
+            <img src="./Oxana-hero.png" alt="Оксана — детский массажист" loading="eager" />
           </div>
         </div>
       </section>
@@ -215,12 +215,22 @@
       <section class="section">
         <div class="container">
           <h2>Результат</h2>
-          <div class="cards">
-            <div class="card">Спокойный ребёнок</div>
-            <div class="card">Улучшение сна</div>
-            <div class="card">Снижение колик</div>
-            <div class="card">Гармоничное развитие</div>
-            <div class="card">Уверенность родителей</div>
+          <div class="result-split">
+            <section class="result-group" data-result-group="child" aria-label="Для ребёнка">
+              <h3 class="result-group__title">Для ребёнка</h3>
+              <div class="cards">
+                <div class="card">Спокойный ребёнок</div>
+                <div class="card">Улучшение сна</div>
+                <div class="card">Снижение колик</div>
+                <div class="card">Гармоничное развитие</div>
+              </div>
+            </section>
+            <section class="result-group" data-result-group="parent" aria-label="Для родителей">
+              <h3 class="result-group__title">Для родителей</h3>
+              <div class="cards">
+                <div class="card">Уверенность родителей</div>
+              </div>
+            </section>
           </div>
         </div>
       </section>
@@ -232,7 +242,7 @@
               <h2>Записаться</h2>
               <p class="muted">
                 Оставьте контакты — я напишу/позвоню и подберу удобное время.
-                Заявка сохраняется только в вашем браузере (это демо-лендинг).
+                Перед отправкой нужно согласиться на обработку персональных данных.
               </p>
               <div class="mini">
                 <div class="mini__item">
@@ -304,27 +314,53 @@
       <div class="container footer__inner">
         <div>Москва и Московская область</div>
         <div class="muted">Детский массажист Оксана</div>
-        <button class="link" type="button" id="showLeads">Показать сохранённые заявки</button>
+        <div class="footer__right">
+          <a class="footer__admin" href="./admin-temp.html" aria-label="Вход в админку">Админ</a>
+        </div>
       </div>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <dialog class="dialog" id="leadsDialog" aria-label="Сохранённые заявки">
+    <dialog class="dialog" id="consentDialog" aria-label="Согласие на обработку персональных данных">
       <div class="dialog__head">
-        <h3 class="dialog__title">Сохранённые заявки</h3>
-        <button class="icon-btn" type="button" id="closeDialog" aria-label="Закрыть">✕</button>
+        <h3 class="dialog__title" id="consentTitle">Согласие на обработку персональных данных</h3>
+        <button class="icon-btn" type="button" id="consentClose" aria-label="Закрыть">✕</button>
       </div>
       <div class="dialog__body">
-        <div class="muted small" id="leadsHint"></div>
-        <pre class="dialog__pre" id="leadsPre"></pre>
+        <div class="muted small" id="consentBody">
+          Перед отправкой заявки нужно дать согласие на обработку персональных данных.
+        </div>
+        <label class="consent-check">
+          <input type="checkbox" id="consentAgree" />
+          <span>
+            Я даю согласие на обработку персональных данных для обратной связи.
+            <button class="link" type="button" id="openPolicy">Политика</button>
+          </span>
+        </label>
+        <div class="muted small" id="consentError" aria-live="polite"></div>
       </div>
       <div class="dialog__actions">
-        <button class="btn btn--secondary" type="button" id="clearLeads">Очистить</button>
-        <button class="btn" type="button" id="copyLeads">Скопировать</button>
+        <button class="btn btn--secondary" type="button" id="consentCancel">Отмена</button>
+        <button class="btn" type="button" id="consentSubmit">Отправить заявку</button>
       </div>
     </dialog>
 
+    <dialog class="dialog" id="policyDialog" aria-label="Политика обработки персональных данных">
+      <div class="dialog__head">
+        <h3 class="dialog__title" id="policyTitle">Политика обработки персональных данных</h3>
+        <button class="icon-btn" type="button" id="policyClose" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="dialog__body">
+        <div class="dialog__content" id="policyBody"></div>
+      </div>
+      <div class="dialog__actions">
+        <button class="btn" type="button" id="policyOk">Понятно</button>
+      </div>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase-config.js"></script>
     <script src="./script.js"></script>
   </body>
 </html>

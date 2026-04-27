@@ -1,5 +1,10 @@
-const STORAGE_KEY = "cmtv223:leads";
 const THEME_KEY = "cmtv223:theme";
+const CONTENT_KEY = "cmtv223:site_content";
+const LEGAL_KEY = "cmtv223:legal_texts";
+const LEADS_KEY = "cmtv223:leads";
+
+const SITE_CONTENT_SINGLETON_ID = 1;
+const LEGAL_TEXTS_SINGLETON_ID = 1;
 
 function qs(sel, root = document) {
   return root.querySelector(sel);
@@ -44,14 +49,30 @@ function safeJsonParse(value, fallback) {
   }
 }
 
+function getLocalContent() {
+  const v = safeJsonParse(localStorage.getItem(CONTENT_KEY), null);
+  return v && typeof v === "object" ? v : null;
+}
+
+function getLocalLegal() {
+  const v = safeJsonParse(localStorage.getItem(LEGAL_KEY), null);
+  return v && typeof v === "object" ? v : null;
+}
+
 function getLeads() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  const parsed = safeJsonParse(raw, []);
+  const parsed = safeJsonParse(localStorage.getItem(LEADS_KEY), []);
   return Array.isArray(parsed) ? parsed : [];
 }
 
 function setLeads(leads) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+  localStorage.setItem(LEADS_KEY, JSON.stringify(leads));
+}
+
+function getSupabase() {
+  const url = window.SUPABASE_URL;
+  const key = window.SUPABASE_ANON_KEY;
+  if (!url || !key || !window.supabase?.createClient) return null;
+  return window.supabase.createClient(url, key);
 }
 
 function normalizePhone(input) {
@@ -108,6 +129,175 @@ function formatLeadsForDisplay(leads) {
     .join("\n\n---\n\n");
 }
 
+function setText(el, value) {
+  if (!el) return;
+  el.textContent = value == null ? "" : String(value);
+}
+
+function setHtml(el, value) {
+  if (!el) return;
+  el.innerHTML = value == null ? "" : String(value);
+}
+
+function setInputValue(el, value) {
+  if (!el) return;
+  el.value = value == null ? "" : String(value);
+}
+
+function applySiteContent(content) {
+  if (!content || typeof content !== "object") return;
+
+  const isNonEmptyString = (v) => typeof v === "string" && v.trim().length > 0;
+
+  function setTextIfAny(el, value) {
+    if (value == null) return;
+    const s = String(value);
+    if (!s.trim()) return;
+    setText(el, s);
+  }
+
+  function setHtmlIfAny(el, value) {
+    if (value == null) return;
+    const s = String(value);
+    if (!s.trim()) return;
+    setHtml(el, s);
+  }
+
+  function renderCards(cardsRoot, values) {
+    if (!cardsRoot) return;
+    if (!Array.isArray(values)) return;
+    const cleaned = values.map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
+    if (!cleaned.length) return;
+    cardsRoot.innerHTML = "";
+    cleaned.forEach((t) => {
+        const el = document.createElement("div");
+        el.className = "card";
+        el.textContent = t;
+        cardsRoot.appendChild(el);
+      });
+  }
+
+  // Hero
+  setTextIfAny(qs(".hero .pill"), content.hero_pill);
+  setTextIfAny(qs(".hero h1"), content.hero_h1);
+  setTextIfAny(qs(".hero .lead"), content.hero_lead);
+  const heroBullets = Array.from(document.querySelectorAll(".hero__bullets li"));
+  if (Array.isArray(content.hero_bullets)) {
+    const cleaned = content.hero_bullets.map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
+    if (cleaned.length) heroBullets.forEach((li, idx) => setText(li, cleaned[idx] ?? li.textContent));
+  }
+  const heroImg = qs(".hero__media img");
+  if (heroImg && isNonEmptyString(content.hero_image_url)) heroImg.src = content.hero_image_url.trim();
+
+  // About
+  setTextIfAny(qs("#about h2"), content.about_h2);
+  const aboutWide = qs("#about .card--wide");
+  if (aboutWide && Array.isArray(content.about_wide_paragraphs)) {
+    const parts = content.about_wide_paragraphs
+      .filter(Boolean)
+      .map((p) => `<p>${String(p)}</p>`)
+      .join("");
+    setHtmlIfAny(aboutWide, parts);
+  }
+  const aboutCards = Array.from(document.querySelectorAll("#about .cards:nth-of-type(2) .card"));
+  if (Array.isArray(content.about_cards)) {
+    aboutCards.forEach((card, idx) => {
+      const item = content.about_cards[idx];
+      if (!item) return;
+      setTextIfAny(card.querySelector("h3"), item.h3);
+      setTextIfAny(card.querySelector("p"), item.p);
+    });
+  }
+
+  // When
+  setTextIfAny(qs(".section--alt h2"), content.when_h2);
+  const whenCards = Array.from(document.querySelectorAll(".section--alt .cards .card"));
+  if (Array.isArray(content.when_cards)) {
+    const cleaned = content.when_cards.map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
+    if (cleaned.length) whenCards.forEach((el, idx) => setText(el, cleaned[idx] ?? el.textContent));
+  }
+
+  // Services
+  setTextIfAny(qs("#services h2"), content.services_h2);
+  const serviceCards = Array.from(document.querySelectorAll("#services .card"));
+  if (Array.isArray(content.services)) {
+    serviceCards.forEach((card, idx) => {
+      const item = content.services[idx];
+      if (!item) return;
+      setTextIfAny(card.querySelector("h3"), item.h3);
+      setTextIfAny(card.querySelector("p"), item.p);
+      const btn = card.querySelector("button[data-service]");
+      if (btn && isNonEmptyString(item.button_label)) setText(btn, item.button_label.trim());
+      if (btn && isNonEmptyString(item.service_value)) btn.setAttribute("data-service", item.service_value.trim());
+    });
+  }
+
+  // How
+  setTextIfAny(qs("#how h2"), content.how_h2);
+  const howCards = Array.from(document.querySelectorAll("#how .cards .card"));
+  if (Array.isArray(content.how_cards)) {
+    const cleaned = content.how_cards.map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
+    if (cleaned.length) howCards.forEach((el, idx) => setText(el, cleaned[idx] ?? el.textContent));
+  }
+
+  // Result
+  const resultSection = Array.from(document.querySelectorAll("main > section.section")).find((s) =>
+    s.querySelector("h2")?.textContent?.trim()?.toLowerCase?.().includes("результат")
+  );
+  if (resultSection) {
+    setTextIfAny(resultSection.querySelector("h2"), content.result_h2);
+    const childGroup = resultSection.querySelector('[data-result-group="child"]');
+    const parentGroup = resultSection.querySelector('[data-result-group="parent"]');
+
+    const hasSplitDom = Boolean(childGroup && parentGroup);
+    const splitContentProvided = Boolean(
+      Array.isArray(content.result_child_cards) ||
+        Array.isArray(content.result_parent_cards) ||
+        content.result_child_h3 ||
+        content.result_parent_h3
+    );
+
+    if (hasSplitDom) {
+      const childCardsRoot = childGroup.querySelector(".cards");
+      const parentCardsRoot = parentGroup.querySelector(".cards");
+
+      if (splitContentProvided) {
+        if (content.result_child_h3) setTextIfAny(childGroup.querySelector("h3"), content.result_child_h3);
+        if (content.result_parent_h3) setTextIfAny(parentGroup.querySelector("h3"), content.result_parent_h3);
+        if (Array.isArray(content.result_child_cards)) renderCards(childCardsRoot, content.result_child_cards);
+        if (Array.isArray(content.result_parent_cards)) renderCards(parentCardsRoot, content.result_parent_cards);
+      } else if (Array.isArray(content.result_cards)) {
+        // fallback for old content JSON on the new split layout
+        const all = content.result_cards.filter(Boolean);
+        const childVals = all.slice(0, Math.max(0, all.length - 1));
+        const parentVals = all.length ? all.slice(-1) : [];
+        renderCards(childCardsRoot, childVals);
+        renderCards(parentCardsRoot, parentVals);
+      }
+    } else {
+      // legacy layout: one cards grid
+      const cardsRoot = resultSection.querySelector(".cards");
+      renderCards(cardsRoot, content.result_cards);
+    }
+  }
+
+  // Form block
+  setTextIfAny(qs("#form h2"), content.form_h2);
+  setTextIfAny(qs("#form .form-grid__text .muted"), content.form_lead);
+  setTextIfAny(qs("#form .mini__item:nth-child(1) .mini__value"), content.form_geo_value);
+  setTextIfAny(qs("#form .mini__item:nth-child(2) .mini__value"), content.form_age_value);
+}
+
+function applyLegalTexts(legal) {
+  if (!legal || typeof legal !== "object") return;
+  setText(qs("#consentTitle"), legal.consent_title);
+  setHtml(qs("#consentBody"), legal.consent_body_html);
+  setText(qs("#policyTitle"), legal.policy_title);
+  setHtml(qs("#policyBody"), legal.policy_body_html);
+  const short = qs("#leadForm .muted.small");
+  if (short && legal.consent_short_text) setText(short, legal.consent_short_text);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   applyTheme(getPreferredTheme());
 
@@ -120,17 +310,50 @@ document.addEventListener("DOMContentLoaded", () => {
   const nameError = qs("#nameError");
   const phoneError = qs("#phoneError");
 
-  const dialog = qs("#leadsDialog");
-  const leadsPre = qs("#leadsPre");
-  const leadsHint = qs("#leadsHint");
+  const consentDialog = qs("#consentDialog");
+  const consentClose = qs("#consentClose");
+  const consentCancel = qs("#consentCancel");
+  const consentSubmit = qs("#consentSubmit");
+  const consentAgree = qs("#consentAgree");
+  const consentError = qs("#consentError");
+  const openPolicy = qs("#openPolicy");
 
-  const showLeadsBtn = qs("#showLeads");
-  const closeDialogBtn = qs("#closeDialog");
-  const clearLeadsBtn = qs("#clearLeads");
-  const copyLeadsBtn = qs("#copyLeads");
+  const policyDialog = qs("#policyDialog");
+  const policyClose = qs("#policyClose");
+  const policyOk = qs("#policyOk");
 
   const themeToggle = qs("#themeToggle");
   themeToggle?.addEventListener("click", toggleTheme);
+
+  const sb = getSupabase();
+  let legalTexts = null;
+  let pendingLead = null;
+
+  async function loadContentAndLegal() {
+    // Local overrides for the temporary admin (GitHub Pages, no backend)
+    const localContent = getLocalContent();
+    const localLegal = getLocalLegal();
+    if (localContent) applySiteContent(localContent);
+    if (localLegal) applyLegalTexts(localLegal);
+
+    // If Supabase is configured later, it will override when available.
+    if (!sb) return;
+    try {
+      const [{ data: contentRow }, { data: legalRow }] = await Promise.all([
+        sb.from("site_content").select("*").eq("id", SITE_CONTENT_SINGLETON_ID).maybeSingle(),
+        sb.from("legal_texts").select("*").eq("id", LEGAL_TEXTS_SINGLETON_ID).maybeSingle(),
+      ]);
+      if (contentRow?.content_json) applySiteContent(contentRow.content_json);
+      if (legalRow) {
+        legalTexts = legalRow;
+        applyLegalTexts(legalRow);
+      }
+    } catch {
+      // If Supabase isn't configured yet, site still works as static.
+    }
+  }
+
+  loadContentAndLegal();
 
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-scroll-to]");
@@ -155,6 +378,65 @@ document.addEventListener("DOMContentLoaded", () => {
   nameInput?.addEventListener("input", () => setFieldError(nameInput, nameError, validateName(nameInput.value)));
   phoneInput?.addEventListener("input", () => setFieldError(phoneInput, phoneError, validatePhone(phoneInput.value)));
 
+  function openConsentDialog(lead) {
+    pendingLead = lead;
+    if (consentAgree) consentAgree.checked = false;
+    if (consentError) consentError.textContent = "";
+    if (consentDialog?.showModal) consentDialog.showModal();
+    else showToast("Ваш браузер не поддерживает окно согласия.");
+  }
+
+  async function submitLeadToSupabase(lead) {
+    if (!sb) throw new Error("Supabase not configured");
+    const payload = {
+      service: lead.service,
+      name: lead.name,
+      phone: lead.phone,
+      child_age: lead.age,
+      status: "new",
+      consented_at: new Date().toISOString(),
+      consent_text_version: legalTexts?.version || null,
+      consent_text_snapshot: legalTexts?.consent_snapshot_for_logging || null,
+    };
+    const { error } = await sb.from("leads").insert(payload);
+    if (error) throw error;
+  }
+
+  function submitLeadToLocalStorage(lead) {
+    const snapshot = [
+      legalTexts?.consent_title || "",
+      legalTexts?.consent_body_html || "",
+      legalTexts?.policy_title || "",
+      legalTexts?.policy_body_html || "",
+    ].filter(Boolean).join("\n\n");
+
+    const obj = {
+      createdAt: new Date().toLocaleString("ru-RU"),
+      created_at: new Date().toISOString(),
+      service: lead.service,
+      name: lead.name,
+      phone: lead.phone,
+      age: lead.age,
+      status: "new",
+      statusUpdatedAt: new Date().toISOString(),
+      fulfilledAt: null,
+      consented_at: new Date().toISOString(),
+      consent_text_version: legalTexts?.version || null,
+      consent_text_snapshot: snapshot || null,
+    };
+
+    const leads = getLeads();
+    leads.unshift(obj);
+    setLeads(leads.slice(0, 200));
+  }
+
+  function resetFormUi() {
+    form?.reset();
+    if (serviceInput) serviceInput.value = "Массаж";
+    setFieldError(nameInput, nameError, "");
+    setFieldError(phoneInput, phoneError, "");
+  }
+
   form?.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!runValidation()) {
@@ -163,49 +445,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const lead = {
-      createdAt: new Date().toLocaleString("ru-RU"),
       service: (serviceInput?.value || "Массаж").trim(),
       name: (nameInput?.value || "").trim(),
       phone: normalizePhone(phoneInput?.value),
       age: (ageInput?.value || "").trim(),
     };
 
-    const leads = getLeads();
-    leads.unshift(lead);
-    setLeads(leads.slice(0, 50));
-
-    form.reset();
-    if (serviceInput) serviceInput.value = "Массаж";
-    setFieldError(nameInput, nameError, "");
-    setFieldError(phoneInput, phoneError, "");
-    showToast("Заявка сохранена. Я свяжусь с вами в ближайшее время.");
+    openConsentDialog(lead);
   });
 
-  function openLeadsDialog() {
-    const leads = getLeads();
-    if (leadsPre) leadsPre.textContent = formatLeadsForDisplay(leads);
-    if (leadsHint) leadsHint.textContent = leads.length ? `Всего: ${leads.length}` : "Пока ничего не сохранено.";
-    if (dialog?.showModal) dialog.showModal();
-    else showToast("Ваш браузер не поддерживает окно заявок.");
+  function closeConsent() {
+    pendingLead = null;
+    consentDialog?.close?.();
   }
 
-  showLeadsBtn?.addEventListener("click", openLeadsDialog);
-  closeDialogBtn?.addEventListener("click", () => dialog?.close());
+  consentClose?.addEventListener("click", closeConsent);
+  consentCancel?.addEventListener("click", closeConsent);
 
-  clearLeadsBtn?.addEventListener("click", () => {
-    setLeads([]);
-    if (leadsPre) leadsPre.textContent = "Заявок пока нет.";
-    if (leadsHint) leadsHint.textContent = "Очищено.";
-    showToast("Сохранённые заявки очищены.");
+  openPolicy?.addEventListener("click", () => {
+    if (policyDialog?.showModal) policyDialog.showModal();
+    else showToast("Ваш браузер не поддерживает окно политики.");
   });
+  policyClose?.addEventListener("click", () => policyDialog?.close?.());
+  policyOk?.addEventListener("click", () => policyDialog?.close?.());
 
-  copyLeadsBtn?.addEventListener("click", async () => {
+  consentSubmit?.addEventListener("click", async () => {
+    if (!pendingLead) return;
+    if (!consentAgree?.checked) {
+      if (consentError) consentError.textContent = "Поставьте галочку согласия, чтобы отправить заявку.";
+      return;
+    }
+    if (consentError) consentError.textContent = "";
     try {
-      const text = leadsPre?.textContent || "";
-      await navigator.clipboard.writeText(text);
-      showToast("Скопировано в буфер обмена.");
+      if (sb) await submitLeadToSupabase(pendingLead);
+      else submitLeadToLocalStorage(pendingLead);
+      closeConsent();
+      resetFormUi();
+      showToast(sb ? "Заявка отправлена. Я свяжусь с вами в ближайшее время." : "Заявка сохранена. Я свяжусь с вами в ближайшее время.");
     } catch {
-      showToast("Не удалось скопировать (ограничения браузера).");
+      showToast("Не удалось отправить заявку. Попробуйте позже.");
     }
   });
 

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Админка (временно) — Детский массажист Оксана</title>
+    <meta name="robots" content="noindex,nofollow" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Commissioner:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./admin-temp.css" />
+  </head>
+
+  <body>
+    <main class="admin container">
+      <header class="admin__head">
+        <a class="admin__back" href="./index.html">← На сайт</a>
+        <div class="admin__title">
+          <h1>Админка (временно)</h1>
+          <div class="muted small" id="adminStatus">localStorage</div>
+        </div>
+        <div class="admin__actions">
+          <button class="btn btn--secondary" type="button" id="logoutBtn">Выйти</button>
+        </div>
+      </header>
+
+      <section class="admin__card" id="loginCard">
+        <h2>Вход</h2>
+        <p class="muted small">
+          Это временная админка для GitHub Pages. Данные и заявки хранятся в вашем браузере (localStorage).
+        </p>
+
+        <form class="admin-form" id="loginForm">
+          <label class="field">
+            <span class="field__label">Логин (email)</span>
+            <input type="email" id="loginEmail" autocomplete="username" required />
+          </label>
+          <label class="field">
+            <span class="field__label">Пароль</span>
+            <input type="password" id="loginPassword" autocomplete="current-password" required />
+          </label>
+          <button class="btn btn--wide" type="submit">Войти</button>
+          <div class="muted small" id="loginError" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="admin__grid" id="appGrid" hidden>
+        <section class="admin__card">
+          <h2>Фото на главной</h2>
+          <p class="muted small">
+            Рекомендации: <b>JPG/PNG/WebP</b>, пропорции <b>3:4</b>, размер около <b>900×1200</b>, до <b>2 МБ</b>.
+            Временно фото сохраняется как Data URL (в localStorage).
+          </p>
+          <div class="admin-row">
+            <input type="file" id="heroFile" accept="image/jpeg,image/png,image/webp" />
+            <button class="btn" type="button" id="uploadHeroBtn">Сохранить фото</button>
+          </div>
+          <div class="muted small" id="uploadHint" aria-live="polite"></div>
+        </section>
+
+        <section class="admin__card">
+          <h2>Тексты сайта</h2>
+          <p class="muted small">Редактирование по секциям. Сохраните и обновите главную страницу, чтобы увидеть изменения.</p>
+          <div class="admin-row">
+            <button class="btn btn--secondary" type="button" id="resetContentBtn">Сбросить к дефолту</button>
+            <button class="btn btn--secondary" type="button" id="pullFromSiteBtn">Подтянуть с сайта</button>
+            <button class="btn btn--secondary" type="button" id="exportContentBtn">Экспорт</button>
+            <button class="btn" type="button" id="saveContentBtn">Сохранить</button>
+            <button class="btn btn--secondary" type="button" id="saveContentJsonBtn">Сохранить из JSON</button>
+          </div>
+
+          <div class="admin-sections">
+            <details class="admin-details" open>
+              <summary class="admin-details__summary">Hero (первый экран)</summary>
+              <div class="admin-details__body">
+                <label class="field">
+                  <span class="field__label">Плашка (pill)</span>
+                  <input type="text" id="c_hero_pill" />
+                </label>
+                <label class="field">
+                  <span class="field__label">Заголовок H1</span>
+                  <input type="text" id="c_hero_h1" />
+                </label>
+                <label class="field">
+                  <span class="field__label">Подзаголовок (lead)</span>
+                  <textarea class="admin-text" id="c_hero_lead"></textarea>
+                </label>
+                <div class="admin-list">
+                  <div class="admin-list__head">
+                    <div class="muted small">Пункты (список)</div>
+                    <button class="btn btn--secondary" type="button" id="addHeroBullet">Добавить пункт</button>
+                  </div>
+                  <div class="admin-list__items" id="heroBullets"></div>
+                </div>
+              </div>
+            </details>
+
+            <details class="admin-details">
+              <summary class="admin-details__summary">Обо мне</summary>
+              <div class="admin-details__body">
+                <label class="field">
+                  <span class="field__label">Заголовок секции</span>
+                  <input type="text" id="c_about_h2" />
+                </label>
+                <div class="admin-list">
+                  <div class="admin-list__head">
+                    <div class="muted small">Абзацы</div>
+                    <button class="btn btn--secondary" type="button" id="addAboutParagraph">Добавить абзац</button>
+                  </div>
+                  <div class="admin-list__items" id="aboutParagraphs"></div>
+                </div>
+
+                <div class="admin-list">
+                  <div class="admin-list__head">
+                    <div class="muted small">Карточки</div>
+                    <button class="btn btn--secondary" type="button" id="addAboutCard">Добавить карточку</button>
+                  </div>
+                  <div class="admin-list__items" id="aboutCards"></div>
+                </div>
+              </div>
+            </details>
+
+            <details class="admin-details">
+              <summary class="admin-details__summary">Когда стоит обратиться</summary>
+              <div class="admin-details__body">
+                <label class="field">
+                  <span class="field__label">Заголовок секции</span>
+                  <input type="text" id="c_when_h2" />
+                </label>
+                <div class="admin-list">
+                  <div class="admin-list__head">
+                    <div class="muted small">Пункты</div>
+                    <button class="btn btn--secondary" type="button" id="addWhenItem">Добавить пункт</button>
+                  </div>
+                  <div class="admin-list__items" id="whenItems"></div>
+                </div>
+              </div>
+            </details>
+
+            <details class="admin-details">
+              <summary class="admin-details__summary">Услуги</summary>
+              <div class="admin-details__body">
+                <label class="field">
+                  <span class="field__label">Заголовок секции</span>
+                  <input type="text" id="c_services_h2" />
+                </label>
+                <div class="admin-list">
+                  <div class="admin-list__head">
+                    <div class="muted small">Услуги</div>
+                    <button class="btn btn--secondary" type="button" id="addService">Добавить услугу</button>
+                  </div>
+                  <div class="admin-list__items" id="servicesItems"></div>
+                </div>
+              </div>
+            </details>
+
+            <details class="admin-details">
+              <summary class="admin-details__summary">Как проходит работа</summary>
+              <div class="admin-details__body">
+                <label class="field"><span class="field__label">Заголовок секции</span><input type="text" id="c_how_h2" /></label>
+                <div class="admin-list">
+                  <div class="admin-list__head">
+                    <div class="muted small">Пункты</div>
+                    <button class="btn btn--secondary" type="button" id="addHowItem">Добавить пункт</button>
+                  </div>
+                  <div class="admin-list__items" id="howItems"></div>
+                </div>
+              </div>
+            </details>
+
+            <details class="admin-details">
+              <summary class="admin-details__summary">Результат</summary>
+              <div class="admin-details__body">
+                <label class="field"><span class="field__label">Заголовок секции</span><input type="text" id="c_result_h2" /></label>
+                <div class="admin-cols admin-cols--2">
+                  <label class="field">
+                    <span class="field__label">Подзаголовок 1</span>
+                    <input type="text" id="c_result_child_h3" />
+                  </label>
+                  <label class="field">
+                    <span class="field__label">Подзаголовок 2</span>
+                    <input type="text" id="c_result_parent_h3" />
+                  </label>
+                </div>
+
+                <div class="admin-cols admin-cols--2">
+                  <div class="admin-list">
+                    <div class="admin-list__head">
+                      <div class="muted small">Для ребёнка</div>
+                      <button class="btn btn--secondary" type="button" id="addResultChildItem">Добавить пункт</button>
+                    </div>
+                    <div class="admin-list__items" id="resultChildItems"></div>
+                  </div>
+
+                  <div class="admin-list">
+                    <div class="admin-list__head">
+                      <div class="muted small">Для родителей</div>
+                      <button class="btn btn--secondary" type="button" id="addResultParentItem">Добавить пункт</button>
+                    </div>
+                    <div class="admin-list__items" id="resultParentItems"></div>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <details class="admin-details">
+              <summary class="admin-details__summary">Блок формы</summary>
+              <div class="admin-details__body">
+                <label class="field"><span class="field__label">Заголовок</span><input type="text" id="c_form_h2" /></label>
+                <label class="field"><span class="field__label">Текст</span><textarea class="admin-text" id="c_form_lead"></textarea></label>
+                <div class="admin-cols admin-cols--2">
+                  <label class="field"><span class="field__label">География</span><input type="text" id="c_form_geo" /></label>
+                  <label class="field"><span class="field__label">Возраст</span><input type="text" id="c_form_age" /></label>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <details class="admin-details admin-details--json">
+            <summary class="admin-details__summary">Расширенно: JSON (для разработчика)</summary>
+            <div class="admin-details__body">
+              <textarea class="admin-json" id="contentJson" spellcheck="false"></textarea>
+              <div class="muted small">Если правите JSON вручную — нажмите «Сохранить из JSON».</div>
+            </div>
+          </details>
+
+          <div class="muted small" id="contentHint" aria-live="polite"></div>
+        </section>
+
+        <section class="admin__card">
+          <h2>152‑ФЗ: политика и согласие</h2>
+          <div class="admin-row">
+            <button class="btn btn--secondary" type="button" id="resetLegalBtn">Сбросить к дефолту</button>
+            <button class="btn" type="button" id="saveLegalBtn">Сохранить</button>
+          </div>
+          <label class="field">
+            <span class="field__label">Короткий текст под кнопкой формы</span>
+            <input type="text" id="legalShort" />
+          </label>
+          <label class="field">
+            <span class="field__label">Заголовок окна согласия</span>
+            <input type="text" id="legalConsentTitle" />
+          </label>
+          <label class="field">
+            <span class="field__label">Текст окна согласия (HTML)</span>
+            <textarea class="admin-text" id="legalConsentBody" spellcheck="false"></textarea>
+          </label>
+          <label class="field">
+            <span class="field__label">Заголовок политики</span>
+            <input type="text" id="legalPolicyTitle" />
+          </label>
+          <label class="field">
+            <span class="field__label">Текст политики (HTML)</span>
+            <textarea class="admin-text" id="legalPolicyBody" spellcheck="false"></textarea>
+          </label>
+          <div class="muted small" id="legalHint" aria-live="polite"></div>
+        </section>
+
+        <section class="admin__card admin__card--wide">
+          <h2>Заявки (в этом браузере)</h2>
+          <div class="admin-row">
+            <button class="btn btn--secondary" type="button" id="reloadLeadsBtn">Обновить</button>
+            <button class="btn btn--secondary" type="button" id="clearLeadsBtn">Очистить</button>
+            <button class="btn" type="button" id="exportLeadsBtn">Экспорт</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table" id="leadsTable" aria-label="Список заявок">
+              <thead>
+                <tr>
+                  <th>Создано</th>
+                  <th>Услуга</th>
+                  <th>Имя</th>
+                  <th>Телефон</th>
+                  <th>Возраст</th>
+                  <th>Статус</th>
+                  <th>Исполнено</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="leadsTbody"></tbody>
+            </table>
+          </div>
+          <div class="muted small" id="leadsHint" aria-live="polite"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./admin-temp.js"></script>
+  </body>
+</html>
+
