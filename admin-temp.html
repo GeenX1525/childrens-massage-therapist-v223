@@ -210,6 +210,23 @@
             </details>
 
             <details class="admin-details">
+              <summary class="admin-details__summary">Истории из практики</summary>
+              <div class="admin-details__body">
+                <label class="field"><span class="field__label">Заголовок секции</span><input type="text" id="c_stories_h2" /></label>
+                <label class="field"
+                  ><span class="field__label">Сколько показывать сначала (6–9)</span><input type="number" id="c_stories_initial" min="1" max="9"
+                /></label>
+                <div class="admin-list">
+                  <div class="admin-list__head">
+                    <div class="muted small">Истории</div>
+                    <button class="btn btn--secondary" type="button" id="addStory">Добавить историю</button>
+                  </div>
+                  <div class="admin-list__items" id="storiesItems"></div>
+                </div>
+              </div>
+            </details>
+
+            <details class="admin-details">
               <summary class="admin-details__summary">Блок формы</summary>
               <div class="admin-details__body">
                 <label class="field"><span class="field__label">Заголовок</span><input type="text" id="c_form_h2" /></label>

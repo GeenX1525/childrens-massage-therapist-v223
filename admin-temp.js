@@ -175,6 +175,26 @@ function getDefaultContent() {
     result_parent_cards: ["Уверенность родителей"],
     // legacy field (kept for backwards compatibility)
     result_cards: ["Спокойный ребёнок", "Улучшение сна", "Снижение колик", "Гармоничное развитие", "Уверенность родителей"],
+    stories_h2: "Истории из практики",
+    stories_initial_count: 6,
+    stories_items: [
+      {
+        photo_url: "./Oxana-hero.png",
+        parent_name: "Анна, мама Миши",
+        child_age: "4 месяца",
+        problem: "Беспокойный сон и напряжение",
+        text: "После пары встреч малыш стал спокойнее, а сон — глубже. Понравилось, что всё объясняли простыми словами и без спешки.",
+        recommendation: "Рекомендация: курс 8–10 встреч + мягкая гимнастика дома",
+      },
+      {
+        photo_url: "./Oxana-hero.png",
+        parent_name: "Екатерина, мама Лизы",
+        child_age: "7 месяцев",
+        problem: "Подготовка к ползанию",
+        text: "Появилась уверенная опора, ушла зажатость в плечиках. Домашние упражнения очень помогли.",
+        recommendation: "Рекомендация: продолжать упражнения 10–15 минут в день",
+      },
+    ],
     form_h2: "Записаться",
     form_lead:
       "Оставьте контакты — я напишу/позвоню и подберу удобное время. Перед отправкой нужно согласиться на обработку персональных данных.",
@@ -389,6 +409,139 @@ function mountServicesList({ root, addBtn }) {
   return { setValues, getValues, addItem };
 }
 
+function mountStoriesList({ root, addBtn }) {
+  async function readFileAsDataUrl(file) {
+    return await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ""));
+      r.onerror = () => reject(new Error("File read error"));
+      r.readAsDataURL(file);
+    });
+  }
+
+  function addItem(
+    value = { photo_url: "", parent_name: "", child_age: "", problem: "", text: "", recommendation: "" }
+  ) {
+    const img = document.createElement("img");
+    img.style.width = "100%";
+    img.style.maxHeight = "140px";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "12px";
+    img.style.display = value?.photo_url ? "block" : "none";
+    if (value?.photo_url) img.src = value.photo_url;
+
+    const photoUrl = el("input", { type: "text", placeholder: "Ссылка на фото (или загрузите файл ниже)", "data-field": "photo_url" });
+    photoUrl.value = value?.photo_url || "";
+
+    const file = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp" });
+    const uploadBtn = el("button", { type: "button", class: "btn btn--secondary", text: "Загрузить фото" });
+    const uploadHint = el("div", { class: "muted small", text: "" });
+
+    function syncPreviewFromUrl() {
+      const url = String(photoUrl.value || "").trim();
+      if (!url) {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        return;
+      }
+      img.src = url;
+      img.style.display = "block";
+    }
+
+    photoUrl.addEventListener("input", () => {
+      uploadHint.textContent = "";
+      syncPreviewFromUrl();
+    });
+
+    uploadBtn.addEventListener("click", async () => {
+      const f = file?.files?.[0];
+      if (!f) {
+        uploadHint.textContent = "Выберите файл.";
+        return;
+      }
+      if (f.size > 2 * 1024 * 1024) {
+        uploadHint.textContent = "Файл больше 2 МБ. Уменьшите размер.";
+        return;
+      }
+      uploadHint.textContent = "Загружаю…";
+      try {
+        const url = await readFileAsDataUrl(f);
+        photoUrl.value = url;
+        syncPreviewFromUrl();
+        uploadHint.textContent = "Готово.";
+      } catch {
+        uploadHint.textContent = "Не удалось загрузить.";
+      }
+    });
+
+    // Auto-upload on file selection (most users expect this)
+    file.addEventListener("change", () => {
+      if (file?.files?.[0]) uploadBtn.click();
+    });
+
+    const parentName = el("input", { type: "text", placeholder: "Имя/инициалы (например: Анна, мама Миши)", "data-field": "parent_name" });
+    parentName.value = value?.parent_name || "";
+    const childAge = el("input", { type: "text", placeholder: "Возраст ребёнка (например: 4 месяца)", "data-field": "child_age" });
+    childAge.value = value?.child_age || "";
+    const problem = el("input", { type: "text", placeholder: "Запрос/проблема (1 строка)", "data-field": "problem" });
+    problem.value = value?.problem || "";
+    const text = el("textarea", { class: "admin-text", placeholder: "Текст отзыва/истории", "data-field": "text" });
+    text.value = value?.text || "";
+    const rec = el("input", { type: "text", placeholder: "Рекомендация/результат (коротко)", "data-field": "recommendation" });
+    rec.value = value?.recommendation || "";
+
+    const removeBtn = el("button", { type: "button", class: "btn btn--secondary admin-item__remove", text: "Удалить" });
+    const headRow = el("div", { class: "admin-item__row" }, [
+      el("div", {}, [
+        el("div", { class: "muted small", text: "История" }),
+        parentName,
+      ]),
+      removeBtn,
+    ]);
+
+    const photoTools = el("div", { class: "admin-item__cols" }, [photoUrl, el("div", {}, [file, uploadBtn, uploadHint])]);
+    const cols2 = el("div", { class: "admin-item__cols" }, [childAge, problem]);
+
+    const item = el("div", { class: "admin-item", "data-kind": "story" }, [
+      headRow,
+      img,
+      photoTools,
+      cols2,
+      text,
+      rec,
+    ]);
+
+    removeBtn.addEventListener("click", () => item.remove());
+    root.appendChild(item);
+  }
+
+  addBtn?.addEventListener("click", () =>
+    addItem({ photo_url: "", parent_name: "", child_age: "", problem: "", text: "", recommendation: "" })
+  );
+
+  function setValues(values) {
+    root.innerHTML = "";
+    (Array.isArray(values) ? values : []).forEach((v) => addItem(v));
+    if (!root.children.length) {
+      addItem({ photo_url: "", parent_name: "", child_age: "", problem: "", text: "", recommendation: "" });
+    }
+  }
+
+  function getValues() {
+    return Array.from(root.querySelectorAll(".admin-item")).map((item) => {
+      const photo_url = getInputValue(item.querySelector('[data-field="photo_url"]'));
+      const parent_name = getInputValue(item.querySelector('[data-field="parent_name"]'));
+      const child_age = getInputValue(item.querySelector('[data-field="child_age"]'));
+      const problem = getInputValue(item.querySelector('[data-field="problem"]'));
+      const text = getInputValue(item.querySelector('[data-field="text"]'));
+      const recommendation = getInputValue(item.querySelector('[data-field="recommendation"]'));
+      return { photo_url, parent_name, child_age, problem, text, recommendation };
+    }).filter((v) => v.photo_url || v.parent_name || v.child_age || v.problem || v.text || v.recommendation);
+  }
+
+  return { setValues, getValues, addItem };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const status = qs("#adminStatus");
 
@@ -429,6 +582,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const cResultH2 = qs("#c_result_h2");
   const cResultChildH3 = qs("#c_result_child_h3");
   const cResultParentH3 = qs("#c_result_parent_h3");
+
+  const cStoriesH2 = qs("#c_stories_h2");
+  const cStoriesInitial = qs("#c_stories_initial");
 
   const cFormH2 = qs("#c_form_h2");
   const cFormLead = qs("#c_form_lead");
@@ -479,6 +635,11 @@ document.addEventListener("DOMContentLoaded", () => {
     addBtn: qs("#addResultParentItem"),
     getPlaceholder: () => "Пункт",
     multiline: false,
+  });
+
+  const storiesItems = mountStoriesList({
+    root: qs("#storiesItems"),
+    addBtn: qs("#addStory"),
   });
 
   const resetLegalBtn = qs("#resetLegalBtn");
@@ -551,6 +712,10 @@ document.addEventListener("DOMContentLoaded", () => {
     resultChildItems.setValues(Array.isArray(c.result_child_cards) ? c.result_child_cards : childFallback);
     resultParentItems.setValues(Array.isArray(c.result_parent_cards) ? c.result_parent_cards : parentFallback);
 
+    cStoriesH2.value = c.stories_h2 || "Истории из практики";
+    cStoriesInitial.value = Number(c.stories_initial_count || 6) || 6;
+    storiesItems.setValues(c.stories_items || []);
+
     cFormH2.value = c.form_h2 || "";
     cFormLead.value = c.form_lead || "";
     cFormGeo.value = c.form_geo_value || "";
@@ -592,6 +757,10 @@ document.addEventListener("DOMContentLoaded", () => {
       result_parent_cards: parentCards,
       // legacy field (kept for older layouts/tools)
       result_cards: [...childCards, ...parentCards].filter(Boolean),
+
+      stories_h2: cStoriesH2.value || "",
+      stories_initial_count: Math.max(1, Math.min(9, Number(cStoriesInitial.value || 6) || 6)),
+      stories_items: storiesItems.getValues(),
 
       form_h2: cFormH2.value || "",
       form_lead: cFormLead.value || "",
