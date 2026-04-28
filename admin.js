@@ -328,6 +328,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // Ensure JSON editor always contains valid JSON (prevents accidental empty value errors).
+  if (contentJson && !String(contentJson.value || "").trim()) {
+    contentJson.value = "{}";
+  }
+
   async function refreshSessionUi() {
     const { data } = await sb.auth.getSession();
     const email = data?.session?.user?.email || null;
@@ -374,7 +379,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function saveContent() {
     setText(contentHint, "");
-    const parsed = safeJsonParse(contentJson.value);
+    const raw = String(contentJson.value || "").trim() || "{}";
+    if (raw !== contentJson.value) contentJson.value = raw;
+    const parsed = safeJsonParse(raw);
     if (!parsed.ok) {
       setText(contentHint, `JSON невалидный: ${parsed.error?.message || "ошибка"}`);
       return;
