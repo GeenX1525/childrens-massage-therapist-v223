@@ -569,6 +569,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetContentBtn = qs("#resetContentBtn");
   const pullFromSiteBtn = qs("#pullFromSiteBtn");
   const exportContentBtn = qs("#exportContentBtn");
+  const copyContentJsonBtn = qs("#copyContentJsonBtn");
   const publishContentBtn = qs("#publishContentBtn");
   const saveContentBtn = qs("#saveContentBtn");
   const saveContentJsonBtn = qs("#saveContentJsonBtn");
@@ -1121,6 +1122,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   exportContentBtn?.addEventListener("click", () => {
     downloadJson("content.json", getContent());
+  });
+
+  copyContentJsonBtn?.addEventListener("click", async () => {
+    const text = prettyJson(getContent());
+    try {
+      await navigator.clipboard.writeText(text);
+      setText(contentHint, "JSON скопирован. Вставьте его в файл content.json на GitHub и сделайте commit.");
+    } catch {
+      // Fallback: select in textarea
+      if (contentJson) {
+        contentJson.value = text;
+        contentJson.focus();
+        contentJson.select?.();
+      }
+      setText(contentHint, "Не удалось скопировать автоматически. Выделил JSON в поле ниже — скопируйте вручную (Ctrl+C).");
+    }
   });
 
   saveContentBtn?.addEventListener("click", saveContentUi);
