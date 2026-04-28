@@ -680,6 +680,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       await upsertContentJson(obj);
       setText(contentHint, "Сохранено (визуально).");
+      await loadContent();
     } catch (e) {
       setText(contentHint, `Ошибка сохранения (визуально): ${e?.message || "ошибка"}`);
     }

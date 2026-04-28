@@ -490,31 +490,38 @@ document.addEventListener("DOMContentLoaded", () => {
   let pendingLead = null;
 
   async function loadContentAndLegal() {
-    // Published content for all viewers (stored in repo)
+    // 1) Supabase (source of truth when configured)
+    if (sb) {
+      try {
+        const [{ data: contentRow, error: contentErr }, { data: legalRow, error: legalErr }] = await Promise.all([
+          sb.from("site_content").select("*").eq("id", SITE_CONTENT_SINGLETON_ID).maybeSingle(),
+          sb.from("legal_texts").select("*").eq("id", LEGAL_TEXTS_SINGLETON_ID).maybeSingle(),
+        ]);
+
+        if (contentErr) console.warn("[content] Supabase error:", contentErr);
+        if (legalErr) console.warn("[legal] Supabase error:", legalErr);
+
+        if (contentRow?.content_json) applySiteContent(contentRow.content_json);
+        if (legalRow) {
+          legalTexts = legalRow;
+          applyLegalTexts(legalRow);
+        }
+
+        // If Supabase worked, we can still allow local draft overrides below.
+      } catch (e) {
+        console.warn("[supabase] Unexpected error:", e);
+      }
+    }
+
+    // 2) Published content for all viewers (stored in repo) - fallback
     const published = await loadPublishedContentJson();
     if (published) applySiteContent(published);
 
-    // Local overrides for the temporary admin (GitHub Pages, no backend)
+    // 3) Local overrides for the temporary admin (drafts on this device)
     const localContent = getLocalContent();
     const localLegal = getLocalLegal();
     if (localContent) applySiteContent(localContent);
     if (localLegal) applyLegalTexts(localLegal);
-
-    // If Supabase is configured later, it will override when available.
-    if (!sb) return;
-    try {
-      const [{ data: contentRow }, { data: legalRow }] = await Promise.all([
-        sb.from("site_content").select("*").eq("id", SITE_CONTENT_SINGLETON_ID).maybeSingle(),
-        sb.from("legal_texts").select("*").eq("id", LEGAL_TEXTS_SINGLETON_ID).maybeSingle(),
-      ]);
-      if (contentRow?.content_json) applySiteContent(contentRow.content_json);
-      if (legalRow) {
-        legalTexts = legalRow;
-        applyLegalTexts(legalRow);
-      }
-    } catch {
-      // If Supabase isn't configured yet, site still works as static.
-    }
   }
 
   loadContentAndLegal();
