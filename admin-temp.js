@@ -943,8 +943,12 @@ document.addEventListener("DOMContentLoaded", () => {
       setContent(next);
       loadContentUi();
       setText(contentHint, "Подтянуто с главной страницы. Проверьте поля и нажмите «Сохранить» при необходимости.");
-    } catch {
-      setText(contentHint, "Не удалось подтянуть с сайта. Откройте админку через локальный сервер/хостинг и попробуйте ещё раз.");
+    } catch (e) {
+      const msg = String(e?.message || e || "");
+      setText(
+        contentHint,
+        `Не удалось подтянуть с сайта. ${msg ? `Причина: ${msg}. ` : ""}Откройте админку через GitHub Pages/локальный сервер и попробуйте ещё раз.`
+      );
     }
   }
 
