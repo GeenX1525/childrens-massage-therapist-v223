@@ -2,6 +2,7 @@ const SESSION_KEY = "cmtv223:admin_session";
 const CONTENT_KEY = "cmtv223:site_content";
 const LEGAL_KEY = "cmtv223:legal_texts";
 const LEADS_KEY = "cmtv223:leads";
+const SITE_CONTENT_SINGLETON_ID = 1;
 
 const ADMINS = {
   "oxanadavidova86@gmail.com": "X561po190",
@@ -49,6 +50,13 @@ function show(el, on) {
 function setText(el, value) {
   if (!el) return;
   el.textContent = value == null ? "" : String(value);
+}
+
+function getSupabase() {
+  const url = window.SUPABASE_URL;
+  const key = window.SUPABASE_ANON_KEY;
+  if (!url || !key || !window.supabase?.createClient) return null;
+  return window.supabase.createClient(url, key);
 }
 
 function safeJsonParse(str, fallback) {
@@ -561,10 +569,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetContentBtn = qs("#resetContentBtn");
   const pullFromSiteBtn = qs("#pullFromSiteBtn");
   const exportContentBtn = qs("#exportContentBtn");
+  const publishContentBtn = qs("#publishContentBtn");
   const saveContentBtn = qs("#saveContentBtn");
   const saveContentJsonBtn = qs("#saveContentJsonBtn");
   const contentJson = qs("#contentJson");
   const contentHint = qs("#contentHint");
+  const publishHint = qs("#publishHint");
 
   // Content fields (visual editor)
   const cHeroPill = qs("#c_hero_pill");
@@ -778,7 +788,43 @@ document.addEventListener("DOMContentLoaded", () => {
     const next = buildContentFromFields();
     setContent(next);
     loadContentUi();
-    setText(contentHint, "Сохранено. Обновите страницу сайта, чтобы увидеть изменения.");
+    setText(contentHint, "Сохранено в этом браузере (localStorage). Другие устройства этого не увидят.");
+  }
+
+  async function publishContentUi() {
+    setText(publishHint, "");
+    const sb = getSupabase();
+    if (!sb) {
+      setText(
+        publishHint,
+        "Supabase не настроен. Заполните `supabase-config.js` (URL + anon key) и обновите страницу."
+      );
+      return;
+    }
+
+    const okSession = refreshSessionUi();
+    if (!okSession) {
+      setText(publishHint, "Сначала войдите в админку.");
+      return;
+    }
+
+    if (publishContentBtn) publishContentBtn.disabled = true;
+    setText(publishHint, "Публикую…");
+    try {
+      const next = buildContentFromFields();
+      const payload = {
+        id: SITE_CONTENT_SINGLETON_ID,
+        content_json: next,
+        updated_at: nowIso(),
+      };
+      const { error } = await sb.from("site_content").upsert(payload, { onConflict: "id" });
+      if (error) throw error;
+      setText(publishHint, "Опубликовано. Клиент увидит правки по ссылке GitHub Pages.");
+    } catch (e) {
+      setText(publishHint, `Ошибка публикации: ${e?.message || "неизвестно"}`);
+    } finally {
+      if (publishContentBtn) publishContentBtn.disabled = false;
+    }
   }
 
   function saveContentFromJsonUi() {
@@ -1078,6 +1124,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   saveContentBtn?.addEventListener("click", saveContentUi);
+  publishContentBtn?.addEventListener("click", publishContentUi);
   saveContentJsonBtn?.addEventListener("click", saveContentFromJsonUi);
 
   resetLegalBtn?.addEventListener("click", () => {
