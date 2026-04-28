@@ -177,6 +177,81 @@ function applySiteContent(content) {
       });
   }
 
+  function renderHeroBullets(listRoot, values) {
+    if (!listRoot) return;
+    if (!Array.isArray(values)) return;
+    const cleaned = values.map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
+    if (!cleaned.length) return;
+    listRoot.innerHTML = "";
+    cleaned.forEach((t) => {
+      const li = document.createElement("li");
+      li.textContent = t;
+      listRoot.appendChild(li);
+    });
+  }
+
+  function renderServices(cardsRoot, values) {
+    if (!cardsRoot) return;
+    if (!Array.isArray(values)) return;
+    const cleaned = values
+      .filter((v) => v && typeof v === "object")
+      .map((s) => ({
+        h3: isNonEmptyString(s.h3) ? s.h3.trim() : "",
+        p: isNonEmptyString(s.p) ? s.p.trim() : "",
+        button_label: isNonEmptyString(s.button_label) ? s.button_label.trim() : "Записаться",
+        service_value: isNonEmptyString(s.service_value) ? s.service_value.trim() : "",
+      }))
+      .filter((s) => s.h3 || s.p);
+    if (!cleaned.length) return;
+    cardsRoot.innerHTML = "";
+    cleaned.forEach((s) => {
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const h3 = document.createElement("h3");
+      h3.textContent = s.h3 || "Услуга";
+      const p = document.createElement("p");
+      p.textContent = s.p || "";
+
+      const btn = document.createElement("button");
+      btn.className = "link";
+      btn.type = "button";
+      btn.setAttribute("data-scroll-to", "#form");
+      btn.textContent = s.button_label || "Записаться";
+      btn.setAttribute("data-service", s.service_value || s.h3 || "Услуга");
+
+      card.appendChild(h3);
+      card.appendChild(p);
+      card.appendChild(btn);
+      cardsRoot.appendChild(card);
+    });
+  }
+
+  function renderAboutCards(cardsRoot, values) {
+    if (!cardsRoot) return;
+    if (!Array.isArray(values)) return;
+    const cleaned = values
+      .filter((v) => v && typeof v === "object")
+      .map((c) => ({
+        h3: isNonEmptyString(c.h3) ? c.h3.trim() : "",
+        p: isNonEmptyString(c.p) ? c.p.trim() : "",
+      }))
+      .filter((c) => c.h3 || c.p);
+    if (!cleaned.length) return;
+    cardsRoot.innerHTML = "";
+    cleaned.forEach((c) => {
+      const card = document.createElement("article");
+      card.className = "card";
+      const h3 = document.createElement("h3");
+      h3.textContent = c.h3;
+      const p = document.createElement("p");
+      p.textContent = c.p;
+      card.appendChild(h3);
+      card.appendChild(p);
+      cardsRoot.appendChild(card);
+    });
+  }
+
   function renderStories(values, initialCount = 6) {
     const grid = qs("#storiesGrid");
     const moreBtn = qs("#storiesMore");
@@ -276,11 +351,7 @@ function applySiteContent(content) {
   setTextIfAny(qs(".hero .pill"), content.hero_pill);
   setTextIfAny(qs(".hero h1"), content.hero_h1);
   setTextIfAny(qs(".hero .lead"), content.hero_lead);
-  const heroBullets = Array.from(document.querySelectorAll(".hero__bullets li"));
-  if (Array.isArray(content.hero_bullets)) {
-    const cleaned = content.hero_bullets.map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
-    if (cleaned.length) heroBullets.forEach((li, idx) => setText(li, cleaned[idx] ?? li.textContent));
-  }
+  if (Array.isArray(content.hero_bullets)) renderHeroBullets(qs(".hero__bullets"), content.hero_bullets);
   const heroImg = qs(".hero__media img");
   if (heroImg && isNonEmptyString(content.hero_image_url)) heroImg.src = content.hero_image_url.trim();
 
@@ -294,46 +365,22 @@ function applySiteContent(content) {
       .join("");
     setHtmlIfAny(aboutWide, parts);
   }
-  const aboutCards = Array.from(document.querySelectorAll("#about .cards:nth-of-type(2) .card"));
   if (Array.isArray(content.about_cards)) {
-    aboutCards.forEach((card, idx) => {
-      const item = content.about_cards[idx];
-      if (!item) return;
-      setTextIfAny(card.querySelector("h3"), item.h3);
-      setTextIfAny(card.querySelector("p"), item.p);
-    });
+    renderAboutCards(qs("#about .cards:nth-of-type(2)"), content.about_cards);
   }
 
   // When
-  setTextIfAny(qs(".section--alt h2"), content.when_h2);
-  const whenCards = Array.from(document.querySelectorAll(".section--alt .cards .card"));
-  if (Array.isArray(content.when_cards)) {
-    const cleaned = content.when_cards.map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
-    if (cleaned.length) whenCards.forEach((el, idx) => setText(el, cleaned[idx] ?? el.textContent));
-  }
+  const whenSection = qs('main > section.section--alt:not([id])');
+  setTextIfAny(whenSection?.querySelector("h2"), content.when_h2);
+  if (Array.isArray(content.when_cards)) renderCards(whenSection?.querySelector(".cards"), content.when_cards);
 
   // Services
   setTextIfAny(qs("#services h2"), content.services_h2);
-  const serviceCards = Array.from(document.querySelectorAll("#services .card"));
-  if (Array.isArray(content.services)) {
-    serviceCards.forEach((card, idx) => {
-      const item = content.services[idx];
-      if (!item) return;
-      setTextIfAny(card.querySelector("h3"), item.h3);
-      setTextIfAny(card.querySelector("p"), item.p);
-      const btn = card.querySelector("button[data-service]");
-      if (btn && isNonEmptyString(item.button_label)) setText(btn, item.button_label.trim());
-      if (btn && isNonEmptyString(item.service_value)) btn.setAttribute("data-service", item.service_value.trim());
-    });
-  }
+  if (Array.isArray(content.services)) renderServices(qs("#services .cards"), content.services);
 
   // How
   setTextIfAny(qs("#how h2"), content.how_h2);
-  const howCards = Array.from(document.querySelectorAll("#how .cards .card"));
-  if (Array.isArray(content.how_cards)) {
-    const cleaned = content.how_cards.map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
-    if (cleaned.length) howCards.forEach((el, idx) => setText(el, cleaned[idx] ?? el.textContent));
-  }
+  if (Array.isArray(content.how_cards)) renderCards(qs("#how .cards"), content.how_cards);
 
   // Result
   const resultSection = Array.from(document.querySelectorAll("main > section.section")).find((s) =>
