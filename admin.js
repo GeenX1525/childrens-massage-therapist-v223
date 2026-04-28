@@ -5,6 +5,32 @@ function qs(sel, root = document) {
   return root.querySelector(sel);
 }
 
+function isFilledValue(v) {
+  if (v == null) return false;
+  return String(v).trim().length > 0;
+}
+
+function updateFilledUi(root = document) {
+  Array.from(root.querySelectorAll(".field")).forEach((field) => {
+    const input = field.querySelector("input, textarea, select");
+    if (!input) return;
+    if (input.tagName === "INPUT" && String(input.type).toLowerCase() === "file") return;
+    const filled = isFilledValue(input.value);
+    field.classList.toggle("field--filled", filled);
+    field.classList.toggle("field--empty", !filled);
+  });
+
+  Array.from(root.querySelectorAll(".admin-item")).forEach((item) => {
+    const fields = Array.from(item.querySelectorAll("input, textarea, select")).filter((el) => {
+      if (el.tagName === "INPUT" && String(el.type).toLowerCase() === "file") return false;
+      return true;
+    });
+    const filled = fields.some((el) => isFilledValue(el.value));
+    item.classList.toggle("admin-item--filled", filled);
+    item.classList.toggle("admin-item--empty", !filled);
+  });
+}
+
 function show(el, on) {
   if (!el) return;
   el.hidden = !on;
@@ -46,6 +72,129 @@ function toSrc(elm) {
   return String(elm?.getAttribute?.("src") ?? "").trim();
 }
 
+function getInputValue(input) {
+  return String(input?.value ?? "").trim();
+}
+
+function mountTextList({ root, addBtn, getPlaceholder, multiline = false }) {
+  function addItem(value = "") {
+    const input = multiline
+      ? el("textarea", { class: "admin-text", "data-field": "text", placeholder: getPlaceholder?.() || "" })
+      : el("input", { type: "text", "data-field": "text", placeholder: getPlaceholder?.() || "" });
+    input.value = value || "";
+
+    const removeBtn = el("button", { type: "button", class: "btn btn--secondary admin-item__remove", text: "Удалить" });
+    const row = el("div", { class: "admin-item__row" }, [input, removeBtn]);
+    const item = el("div", { class: "admin-item", "data-kind": "text" }, [row]);
+    removeBtn.addEventListener("click", () => item.remove());
+    root.appendChild(item);
+  }
+
+  addBtn?.addEventListener("click", () => addItem(""));
+
+  function setValues(values) {
+    root.innerHTML = "";
+    (Array.isArray(values) ? values : []).forEach((v) => addItem(v));
+    if (!root.children.length) addItem("");
+  }
+
+  function getValues() {
+    return Array.from(root.querySelectorAll(".admin-item"))
+      .map((item) => {
+        const input = item.querySelector('[data-field="text"]');
+        return getInputValue(input);
+      })
+      .filter(Boolean);
+  }
+
+  return { setValues, getValues, addItem };
+}
+
+function mountAboutCardsList({ root, addBtn }) {
+  function addItem(value = { h3: "", p: "" }) {
+    const title = el("input", { type: "text", placeholder: "Заголовок", "data-field": "h3" });
+    const body = el("textarea", { class: "admin-text", placeholder: "Текст", "data-field": "p" });
+    title.value = value?.h3 || "";
+    body.value = value?.p || "";
+
+    const removeBtn = el("button", { type: "button", class: "btn btn--secondary admin-item__remove", text: "Удалить" });
+    const headRow = el("div", { class: "admin-item__row" }, [
+      el("div", {}, [el("div", { class: "muted small", text: "Карточка" }), title]),
+      removeBtn,
+    ]);
+    const item = el("div", { class: "admin-item", "data-kind": "about_card" }, [headRow, body]);
+    removeBtn.addEventListener("click", () => item.remove());
+    root.appendChild(item);
+  }
+
+  addBtn?.addEventListener("click", () => addItem({ h3: "", p: "" }));
+
+  function setValues(values) {
+    root.innerHTML = "";
+    (Array.isArray(values) ? values : []).forEach((v) => addItem(v));
+    if (!root.children.length) addItem({ h3: "", p: "" });
+  }
+
+  function getValues() {
+    return Array.from(root.querySelectorAll(".admin-item"))
+      .map((item) => {
+        const h3 = getInputValue(item.querySelector('[data-field="h3"]'));
+        const p = getInputValue(item.querySelector('[data-field="p"]'));
+        return { h3, p };
+      })
+      .filter((v) => v.h3 || v.p);
+  }
+
+  return { setValues, getValues, addItem };
+}
+
+function mountServicesList({ root, addBtn }) {
+  function addItem(value = { h3: "", p: "", service_value: "" }) {
+    const title = el("input", { type: "text", placeholder: "Название услуги", "data-field": "h3" });
+    const body = el("textarea", { class: "admin-text", placeholder: "Описание", "data-field": "p" });
+    const val = el("input", { type: "text", placeholder: "Значение для формы (например: Консультация)", "data-field": "service_value" });
+    title.value = value?.h3 || "";
+    body.value = value?.p || "";
+    val.value = value?.service_value || "";
+
+    const removeBtn = el("button", { type: "button", class: "btn btn--secondary admin-item__remove", text: "Удалить" });
+    const headRow = el("div", { class: "admin-item__row" }, [
+      el("div", {}, [el("div", { class: "muted small", text: "Услуга" }), title]),
+      removeBtn,
+    ]);
+    const cols = el("div", { class: "admin-item__cols" }, [body, val]);
+    const item = el("div", { class: "admin-item", "data-kind": "service" }, [headRow, cols]);
+    removeBtn.addEventListener("click", () => item.remove());
+    root.appendChild(item);
+  }
+
+  addBtn?.addEventListener("click", () => addItem({ h3: "", p: "", service_value: "" }));
+
+  function setValues(values) {
+    root.innerHTML = "";
+    (Array.isArray(values) ? values : []).forEach((v) => addItem(v));
+    if (!root.children.length) addItem({ h3: "", p: "", service_value: "" });
+  }
+
+  function getValues() {
+    return Array.from(root.querySelectorAll(".admin-item"))
+      .map((item) => {
+        const h3 = getInputValue(item.querySelector('[data-field="h3"]'));
+        const p = getInputValue(item.querySelector('[data-field="p"]'));
+        const service_value = getInputValue(item.querySelector('[data-field="service_value"]'));
+        return {
+          h3,
+          p,
+          service_value: service_value || h3,
+          button_label: "Записаться",
+        };
+      })
+      .filter((v) => v.h3 || v.p);
+  }
+
+  return { setValues, getValues, addItem };
+}
+
 function safeJsonParse(str) {
   try {
     return { ok: true, value: JSON.parse(str) };
@@ -84,6 +233,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const reloadContentBtn = qs("#reloadContentBtn");
   const pullFromSiteBtn = qs("#pullFromSiteBtn");
   const saveContentBtn = qs("#saveContentBtn");
+  const saveContentFromFieldsBtn = qs("#saveContentFromFieldsBtn");
+  const copyContentJsonBtn = qs("#copyContentJsonBtn");
   const contentJson = qs("#contentJson");
   const contentHint = qs("#contentHint");
 
@@ -93,6 +244,69 @@ document.addEventListener("DOMContentLoaded", async () => {
   const storiesH2 = qs("#storiesH2");
   const storiesInitialCount = qs("#storiesInitialCount");
   const storiesHint = qs("#storiesHint");
+
+  // Visual editor fields
+  const cHeroPill = qs("#c_hero_pill");
+  const cHeroH1 = qs("#c_hero_h1");
+  const cHeroLead = qs("#c_hero_lead");
+  const cAboutH2 = qs("#c_about_h2");
+  const cWhenH2 = qs("#c_when_h2");
+  const cServicesH2 = qs("#c_services_h2");
+  const cHowH2 = qs("#c_how_h2");
+  const cResultH2 = qs("#c_result_h2");
+  const cResultChildH3 = qs("#c_result_child_h3");
+  const cResultParentH3 = qs("#c_result_parent_h3");
+  const cStoriesH2 = qs("#c_stories_h2");
+  const cStoriesInitial = qs("#c_stories_initial");
+  const cFormH2 = qs("#c_form_h2");
+  const cFormLead = qs("#c_form_lead");
+  const cFormGeo = qs("#c_form_geo");
+  const cFormAge = qs("#c_form_age");
+
+  const heroBullets = mountTextList({
+    root: qs("#heroBullets"),
+    addBtn: qs("#addHeroBullet"),
+    getPlaceholder: () => "Текст пункта",
+    multiline: false,
+  });
+  const aboutParagraphs = mountTextList({
+    root: qs("#aboutParagraphs"),
+    addBtn: qs("#addAboutParagraph"),
+    getPlaceholder: () => "Абзац",
+    multiline: true,
+  });
+  const aboutCards = mountAboutCardsList({
+    root: qs("#aboutCards"),
+    addBtn: qs("#addAboutCard"),
+  });
+  const whenItems = mountTextList({
+    root: qs("#whenItems"),
+    addBtn: qs("#addWhenItem"),
+    getPlaceholder: () => "Пункт",
+    multiline: false,
+  });
+  const servicesItems = mountServicesList({
+    root: qs("#servicesItems"),
+    addBtn: qs("#addService"),
+  });
+  const howItems = mountTextList({
+    root: qs("#howItems"),
+    addBtn: qs("#addHowItem"),
+    getPlaceholder: () => "Пункт",
+    multiline: false,
+  });
+  const resultChildItems = mountTextList({
+    root: qs("#resultChildItems"),
+    addBtn: qs("#addResultChildItem"),
+    getPlaceholder: () => "Пункт",
+    multiline: false,
+  });
+  const resultParentItems = mountTextList({
+    root: qs("#resultParentItems"),
+    addBtn: qs("#addResultParentItem"),
+    getPlaceholder: () => "Пункт",
+    multiline: false,
+  });
 
   const reloadLegalBtn = qs("#reloadLegalBtn");
   const saveLegalBtn = qs("#saveLegalBtn");
@@ -139,6 +353,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const obj = data?.content_json || {};
     contentJson.value = prettyJson(obj);
     setText(contentHint, "Загружено.");
+    loadContentUiFromJson();
   }
 
   async function saveContent() {
@@ -375,6 +590,109 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   reloadContentBtn?.addEventListener("click", loadContent);
   saveContentBtn?.addEventListener("click", saveContent);
+
+  function loadContentUiFromJson() {
+    const obj = getContentObj() || {};
+    if (cHeroPill) cHeroPill.value = obj.hero_pill || "";
+    if (cHeroH1) cHeroH1.value = obj.hero_h1 || "";
+    if (cHeroLead) cHeroLead.value = obj.hero_lead || "";
+    heroBullets.setValues(obj.hero_bullets || []);
+
+    if (cAboutH2) cAboutH2.value = obj.about_h2 || "";
+    aboutParagraphs.setValues(obj.about_wide_paragraphs || []);
+    aboutCards.setValues(obj.about_cards || []);
+
+    if (cWhenH2) cWhenH2.value = obj.when_h2 || "";
+    whenItems.setValues(obj.when_cards || []);
+
+    if (cServicesH2) cServicesH2.value = obj.services_h2 || "";
+    servicesItems.setValues(obj.services || []);
+
+    if (cHowH2) cHowH2.value = obj.how_h2 || "";
+    howItems.setValues(obj.how_cards || []);
+
+    if (cResultH2) cResultH2.value = obj.result_h2 || "";
+    if (cResultChildH3) cResultChildH3.value = obj.result_child_h3 || "Для ребёнка";
+    if (cResultParentH3) cResultParentH3.value = obj.result_parent_h3 || "Для родителей";
+    resultChildItems.setValues(obj.result_child_cards || []);
+    resultParentItems.setValues(obj.result_parent_cards || []);
+
+    if (cStoriesH2) cStoriesH2.value = obj.stories_h2 || "Истории из практики";
+    if (cStoriesInitial) cStoriesInitial.value = String(Number(obj.stories_initial_count || 6) || 6);
+
+    if (cFormH2) cFormH2.value = obj.form_h2 || "";
+    if (cFormLead) cFormLead.value = obj.form_lead || "";
+    if (cFormGeo) cFormGeo.value = obj.form_geo_value || "";
+    if (cFormAge) cFormAge.value = obj.form_age_value || "";
+
+    updateFilledUi(appGrid);
+  }
+
+  function buildContentFromFields() {
+    const base = getContentObj() || {};
+    const childCards = resultChildItems.getValues();
+    const parentCards = resultParentItems.getValues();
+    return {
+      ...base,
+      hero_pill: cHeroPill?.value || "",
+      hero_h1: cHeroH1?.value || "",
+      hero_lead: cHeroLead?.value || "",
+      hero_bullets: heroBullets.getValues(),
+
+      about_h2: cAboutH2?.value || "",
+      about_wide_paragraphs: aboutParagraphs.getValues(),
+      about_cards: aboutCards.getValues(),
+
+      when_h2: cWhenH2?.value || "",
+      when_cards: whenItems.getValues(),
+
+      services_h2: cServicesH2?.value || "",
+      services: servicesItems.getValues(),
+
+      how_h2: cHowH2?.value || "",
+      how_cards: howItems.getValues(),
+
+      result_h2: cResultH2?.value || "",
+      result_child_h3: cResultChildH3?.value || "",
+      result_child_cards: childCards,
+      result_parent_h3: cResultParentH3?.value || "",
+      result_parent_cards: parentCards,
+      result_cards: [...childCards, ...parentCards].filter(Boolean),
+
+      stories_h2: cStoriesH2?.value || "",
+      stories_initial_count: Math.max(1, Math.min(9, Number(cStoriesInitial?.value || 6) || 6)),
+
+      form_h2: cFormH2?.value || "",
+      form_lead: cFormLead?.value || "",
+      form_geo_value: cFormGeo?.value || "",
+      form_age_value: cFormAge?.value || "",
+    };
+  }
+
+  async function saveContentFromFields() {
+    setText(contentHint, "");
+    const obj = buildContentFromFields();
+    setContentObj(obj);
+    loadContentUiFromJson();
+    await saveContent();
+  }
+
+  saveContentFromFieldsBtn?.addEventListener("click", saveContentFromFields);
+
+  copyContentJsonBtn?.addEventListener("click", async () => {
+    const text = prettyJson(getContentObj() || {});
+    try {
+      await navigator.clipboard.writeText(text);
+      setText(contentHint, "JSON скопирован в буфер обмена.");
+    } catch {
+      contentJson?.focus();
+      contentJson?.select?.();
+      setText(contentHint, "Не удалось скопировать автоматически. JSON выделен — скопируйте вручную (Ctrl+C).");
+    }
+  });
+
+  appGrid?.addEventListener("input", () => updateFilledUi(appGrid), true);
+  appGrid?.addEventListener("change", () => updateFilledUi(appGrid), true);
 
   function getContentObj() {
     const parsed = safeJsonParse(contentJson.value || "{}");
@@ -673,6 +991,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (ok) {
     await Promise.all([loadContent(), loadLegal(), loadLeads()]);
     rebuildStoriesUiFromJson();
+    loadContentUiFromJson();
   }
 });
 

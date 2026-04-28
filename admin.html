@@ -67,9 +67,180 @@
           <div class="admin-row">
             <button class="btn btn--secondary" type="button" id="reloadContentBtn">Загрузить из базы</button>
             <button class="btn btn--secondary" type="button" id="pullFromSiteBtn">Подтянуть с сайта</button>
-            <button class="btn" type="button" id="saveContentBtn">Сохранить</button>
+            <button class="btn" type="button" id="saveContentBtn">Сохранить (JSON)</button>
+            <button class="btn btn--secondary" type="button" id="saveContentFromFieldsBtn">Сохранить (визуально)</button>
+            <button class="btn btn--secondary" type="button" id="copyContentJsonBtn">Скопировать JSON</button>
           </div>
-          <textarea class="admin-json" id="contentJson" spellcheck="false"></textarea>
+          <details class="admin-details" open>
+            <summary class="admin-details__summary">Визуальный редактор</summary>
+            <div class="admin-details__body">
+              <div class="admin-sections">
+                <details class="admin-details" open>
+                  <summary class="admin-details__summary">Hero (первый экран)</summary>
+                  <div class="admin-details__body">
+                    <label class="field">
+                      <span class="field__label">Плашка (pill)</span>
+                      <input type="text" id="c_hero_pill" />
+                    </label>
+                    <label class="field">
+                      <span class="field__label">Заголовок H1</span>
+                      <input type="text" id="c_hero_h1" />
+                    </label>
+                    <label class="field">
+                      <span class="field__label">Подзаголовок (lead)</span>
+                      <textarea class="admin-text" id="c_hero_lead"></textarea>
+                    </label>
+                    <div class="admin-list">
+                      <div class="admin-list__head">
+                        <div class="muted small">Пункты (список)</div>
+                        <button class="btn btn--secondary" type="button" id="addHeroBullet">Добавить пункт</button>
+                      </div>
+                      <div class="admin-list__items" id="heroBullets"></div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="admin-details">
+                  <summary class="admin-details__summary">Обо мне</summary>
+                  <div class="admin-details__body">
+                    <label class="field">
+                      <span class="field__label">Заголовок секции</span>
+                      <input type="text" id="c_about_h2" />
+                    </label>
+                    <div class="admin-list">
+                      <div class="admin-list__head">
+                        <div class="muted small">Абзацы</div>
+                        <button class="btn btn--secondary" type="button" id="addAboutParagraph">Добавить абзац</button>
+                      </div>
+                      <div class="admin-list__items" id="aboutParagraphs"></div>
+                    </div>
+
+                    <div class="admin-list">
+                      <div class="admin-list__head">
+                        <div class="muted small">Карточки</div>
+                        <button class="btn btn--secondary" type="button" id="addAboutCard">Добавить карточку</button>
+                      </div>
+                      <div class="admin-list__items" id="aboutCards"></div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="admin-details">
+                  <summary class="admin-details__summary">Когда стоит обратиться</summary>
+                  <div class="admin-details__body">
+                    <label class="field">
+                      <span class="field__label">Заголовок секции</span>
+                      <input type="text" id="c_when_h2" />
+                    </label>
+                    <div class="admin-list">
+                      <div class="admin-list__head">
+                        <div class="muted small">Пункты</div>
+                        <button class="btn btn--secondary" type="button" id="addWhenItem">Добавить пункт</button>
+                      </div>
+                      <div class="admin-list__items" id="whenItems"></div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="admin-details">
+                  <summary class="admin-details__summary">Услуги</summary>
+                  <div class="admin-details__body">
+                    <label class="field">
+                      <span class="field__label">Заголовок секции</span>
+                      <input type="text" id="c_services_h2" />
+                    </label>
+                    <div class="admin-list">
+                      <div class="admin-list__head">
+                        <div class="muted small">Услуги</div>
+                        <button class="btn btn--secondary" type="button" id="addService">Добавить услугу</button>
+                      </div>
+                      <div class="admin-list__items" id="servicesItems"></div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="admin-details">
+                  <summary class="admin-details__summary">Как проходит работа</summary>
+                  <div class="admin-details__body">
+                    <label class="field">
+                      <span class="field__label">Заголовок секции</span>
+                      <input type="text" id="c_how_h2" />
+                    </label>
+                    <div class="admin-list">
+                      <div class="admin-list__head">
+                        <div class="muted small">Пункты</div>
+                        <button class="btn btn--secondary" type="button" id="addHowItem">Добавить пункт</button>
+                      </div>
+                      <div class="admin-list__items" id="howItems"></div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="admin-details">
+                  <summary class="admin-details__summary">Результат</summary>
+                  <div class="admin-details__body">
+                    <label class="field"><span class="field__label">Заголовок секции</span><input type="text" id="c_result_h2" /></label>
+                    <div class="admin-cols admin-cols--2">
+                      <label class="field">
+                        <span class="field__label">Подзаголовок 1</span>
+                        <input type="text" id="c_result_child_h3" />
+                      </label>
+                      <label class="field">
+                        <span class="field__label">Подзаголовок 2</span>
+                        <input type="text" id="c_result_parent_h3" />
+                      </label>
+                    </div>
+
+                    <div class="admin-cols admin-cols--2">
+                      <div class="admin-list">
+                        <div class="admin-list__head">
+                          <div class="muted small">Для ребёнка</div>
+                          <button class="btn btn--secondary" type="button" id="addResultChildItem">Добавить пункт</button>
+                        </div>
+                        <div class="admin-list__items" id="resultChildItems"></div>
+                      </div>
+
+                      <div class="admin-list">
+                        <div class="admin-list__head">
+                          <div class="muted small">Для родителей</div>
+                          <button class="btn btn--secondary" type="button" id="addResultParentItem">Добавить пункт</button>
+                        </div>
+                        <div class="admin-list__items" id="resultParentItems"></div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="admin-details">
+                  <summary class="admin-details__summary">Истории из практики (параметры)</summary>
+                  <div class="admin-details__body">
+                    <label class="field"><span class="field__label">Заголовок секции</span><input type="text" id="c_stories_h2" /></label>
+                    <label class="field"><span class="field__label">Сколько показывать сначала (6–9)</span><input type="number" id="c_stories_initial" min="1" max="9" /></label>
+                  </div>
+                </details>
+
+                <details class="admin-details">
+                  <summary class="admin-details__summary">Блок формы</summary>
+                  <div class="admin-details__body">
+                    <label class="field"><span class="field__label">Заголовок</span><input type="text" id="c_form_h2" /></label>
+                    <label class="field"><span class="field__label">Текст</span><textarea class="admin-text" id="c_form_lead"></textarea></label>
+                    <div class="admin-cols admin-cols--2">
+                      <label class="field"><span class="field__label">География</span><input type="text" id="c_form_geo" /></label>
+                      <label class="field"><span class="field__label">Возраст</span><input type="text" id="c_form_age" /></label>
+                    </div>
+                  </div>
+                </details>
+              </div>
+              <div class="muted small">Подсказка: после правок в визуальном редакторе нажмите «Сохранить (визуально)».</div>
+            </div>
+          </details>
+
+          <details class="admin-details admin-details--json">
+            <summary class="admin-details__summary">Расширенно: JSON</summary>
+            <div class="admin-details__body">
+              <textarea class="admin-json" id="contentJson" spellcheck="false"></textarea>
+            </div>
+          </details>
           <div class="muted small" id="contentHint" aria-live="polite"></div>
         </section>
 
