@@ -65,6 +65,53 @@ body {
   margin: 10px 0 12px;
 }
 
+.admin-list {
+  margin-top: 10px;
+}
+
+.admin-list__items {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.28);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+html[data-theme="dark"] .admin-item {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-item__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.admin-item__cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.admin-item__remove {
+  white-space: nowrap;
+}
+
+.admin-preview {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: none;
+}
+
 .admin-json {
   width: 100%;
   min-height: 340px;

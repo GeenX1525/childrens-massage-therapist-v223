@@ -66,10 +66,37 @@
           <p class="muted small">Редактируется структура всех секций. Сохраняется в Supabase и подтягивается на сайте при загрузке.</p>
           <div class="admin-row">
             <button class="btn btn--secondary" type="button" id="reloadContentBtn">Загрузить из базы</button>
+            <button class="btn btn--secondary" type="button" id="pullFromSiteBtn">Подтянуть с сайта</button>
             <button class="btn" type="button" id="saveContentBtn">Сохранить</button>
           </div>
           <textarea class="admin-json" id="contentJson" spellcheck="false"></textarea>
           <div class="muted small" id="contentHint" aria-live="polite"></div>
+        </section>
+
+        <section class="admin__card admin__card--wide">
+          <h2>Истории из практики</h2>
+          <p class="muted small">
+            Это визуальный редактор для поля <b>stories_items</b> в JSON. После изменений нажмите «Сохранить» в блоке «Тексты сайта».
+            Фото загружаются в Supabase Storage bucket <b>site-assets</b> и сохраняются как публичные ссылки.
+          </p>
+          <div class="admin-row">
+            <button class="btn btn--secondary" type="button" id="storiesReloadBtn">Обновить из JSON</button>
+            <button class="btn" type="button" id="addStoryBtn">Добавить историю</button>
+          </div>
+          <div class="admin-row">
+            <label class="field" style="margin:0; min-width: 260px;">
+              <span class="field__label">Заголовок секции</span>
+              <input type="text" id="storiesH2" />
+            </label>
+            <label class="field" style="margin:0; min-width: 260px;">
+              <span class="field__label">Показывать сначала (6–9)</span>
+              <input type="number" id="storiesInitialCount" min="1" max="9" />
+            </label>
+          </div>
+          <div class="admin-list">
+            <div class="admin-list__items" id="storiesItems"></div>
+          </div>
+          <div class="muted small" id="storiesHint" aria-live="polite"></div>
         </section>
 
         <section class="admin__card">
