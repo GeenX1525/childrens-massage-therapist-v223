@@ -356,6 +356,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadContentUiFromJson();
   }
 
+  async function upsertContentJson(obj) {
+    const payload = {
+      id: SITE_CONTENT_SINGLETON_ID,
+      content_json: obj || {},
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await sb.from("site_content").upsert(payload, { onConflict: "id" });
+    if (error) throw error;
+  }
+
   async function saveContent() {
     setText(contentHint, "");
     const parsed = safeJsonParse(contentJson.value);
@@ -363,19 +373,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       setText(contentHint, `JSON невалидный: ${parsed.error?.message || "ошибка"}`);
       return;
     }
-
-    const payload = {
-      id: SITE_CONTENT_SINGLETON_ID,
-      content_json: parsed.value,
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error } = await sb.from("site_content").upsert(payload, { onConflict: "id" });
-    if (error) {
-      setText(contentHint, `Ошибка сохранения: ${error.message}`);
-      return;
+    try {
+      await upsertContentJson(parsed.value);
+      setText(contentHint, "Сохранено.");
+    } catch (e) {
+      setText(contentHint, `Ошибка сохранения: ${e?.message || "ошибка"}`);
     }
-    setText(contentHint, "Сохранено.");
   }
 
   async function loadLegal() {
@@ -674,7 +677,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const obj = buildContentFromFields();
     setContentObj(obj);
     loadContentUiFromJson();
-    await saveContent();
+    try {
+      await upsertContentJson(obj);
+      setText(contentHint, "Сохранено (визуально).");
+    } catch (e) {
+      setText(contentHint, `Ошибка сохранения (визуально): ${e?.message || "ошибка"}`);
+    }
   }
 
   saveContentFromFieldsBtn?.addEventListener("click", saveContentFromFields);
