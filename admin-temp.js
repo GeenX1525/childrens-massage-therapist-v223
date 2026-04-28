@@ -1120,7 +1120,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   exportContentBtn?.addEventListener("click", () => {
-    downloadJson("site-content.json", getContent());
+    downloadJson("content.json", getContent());
   });
 
   saveContentBtn?.addEventListener("click", saveContentUi);

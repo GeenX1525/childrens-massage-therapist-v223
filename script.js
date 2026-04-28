@@ -75,6 +75,17 @@ function getSupabase() {
   return window.supabase.createClient(url, key);
 }
 
+async function loadPublishedContentJson() {
+  try {
+    const res = await fetch("./content.json", { cache: "no-store" });
+    if (!res.ok) return null;
+    const obj = await res.json();
+    return obj && typeof obj === "object" ? obj : null;
+  } catch {
+    return null;
+  }
+}
+
 function normalizePhone(input) {
   const digits = String(input || "").replace(/\D/g, "");
   if (!digits) return "";
@@ -479,6 +490,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let pendingLead = null;
 
   async function loadContentAndLegal() {
+    // Published content for all viewers (stored in repo)
+    const published = await loadPublishedContentJson();
+    if (published) applySiteContent(published);
+
     // Local overrides for the temporary admin (GitHub Pages, no backend)
     const localContent = getLocalContent();
     const localLegal = getLocalLegal();
