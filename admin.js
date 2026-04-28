@@ -357,6 +357,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function upsertContentJson(obj) {
+    const { data } = await sb.auth.getSession();
+    if (!data?.session) {
+      const err = new Error("Вы не вошли в админку. Сначала авторизуйтесь (email+пароль).");
+      err.code = "not_authenticated";
+      throw err;
+    }
     const payload = {
       id: SITE_CONTENT_SINGLETON_ID,
       content_json: obj || {},
@@ -377,7 +383,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await upsertContentJson(parsed.value);
       setText(contentHint, "Сохранено.");
     } catch (e) {
-      setText(contentHint, `Ошибка сохранения: ${e?.message || "ошибка"}`);
+      setText(contentHint, `Ошибка сохранения: ${e?.message || "ошибка"}${e?.status ? ` (status: ${e.status})` : ""}`);
     }
   }
 
@@ -682,7 +688,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       setText(contentHint, "Сохранено (визуально).");
       await loadContent();
     } catch (e) {
-      setText(contentHint, `Ошибка сохранения (визуально): ${e?.message || "ошибка"}`);
+      setText(contentHint, `Ошибка сохранения (визуально): ${e?.message || "ошибка"}${e?.status ? ` (status: ${e.status})` : ""}`);
     }
   }
 
