@@ -945,6 +945,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     obj.diplomas_items.unshift({ url: "", kind: "image" });
     setContentObj(obj);
     rebuildDiplomasUiFromJson();
+    // UX: immediately open file picker for the new first item.
+    window.setTimeout(() => {
+      const firstRow = diplomasItemsRoot?.querySelector(".admin-item");
+      const input = firstRow?.querySelector('input[type="file"]');
+      if (input) input.click();
+      else if (diplomasHint) setText(diplomasHint, "Добавили строку. Нажмите «Загрузить» и выберите файл.");
+    }, 0);
   }
 
   function ensureStoriesDefaults(obj) {
