@@ -358,6 +358,88 @@ function applySiteContent(content) {
     draw();
   }
 
+  function inferDiplomaKind(url) {
+    const u = String(url || "").trim().toLowerCase();
+    if (!u) return "";
+    if (u.includes(".pdf") || u.startsWith("data:application/pdf")) return "pdf";
+    return "image";
+  }
+
+  function renderDiplomas(values) {
+    const section = qs("#diplomas");
+    const slider = qs("#diplomasSlider");
+    const nav = qs("#diplomas .diplomas-nav");
+    const prev = qs("#diplomasPrev");
+    const next = qs("#diplomasNext");
+    if (!section || !slider) return;
+
+    if (!Array.isArray(values) || !values.length) {
+      slider.innerHTML = "";
+      if (nav) nav.hidden = true;
+      section.hidden = true;
+      return;
+    }
+
+    const cleaned = values
+      .map((v) => {
+        if (typeof v === "string") return { url: v, kind: inferDiplomaKind(v) };
+        if (v && typeof v === "object") {
+          const url = isNonEmptyString(v.url) ? v.url.trim() : isNonEmptyString(v.file_url) ? v.file_url.trim() : "";
+          const kind = isNonEmptyString(v.kind) ? v.kind.trim() : inferDiplomaKind(url);
+          return { url, kind: kind === "pdf" ? "pdf" : "image" };
+        }
+        return { url: "", kind: "" };
+      })
+      .filter((v) => v.url);
+
+    if (!cleaned.length) {
+      slider.innerHTML = "";
+      if (nav) nav.hidden = true;
+      section.hidden = true;
+      return;
+    }
+
+    section.hidden = false;
+    slider.innerHTML = "";
+
+    cleaned.forEach((d, idx) => {
+      const wrap = document.createElement("div");
+      wrap.className = "diploma-item";
+
+      const btn = document.createElement("button");
+      btn.className = "diploma-btn";
+      btn.type = "button";
+      btn.setAttribute("data-media-url", d.url);
+      btn.setAttribute("data-media-kind", d.kind);
+      btn.setAttribute("aria-label", `Открыть документ #${idx + 1}`);
+
+      const thumb = document.createElement("div");
+      thumb.className = "diploma-thumb";
+      if (d.kind === "pdf") {
+        const pdf = document.createElement("div");
+        pdf.className = "diploma-pdf";
+        pdf.textContent = "PDF";
+        thumb.appendChild(pdf);
+      } else {
+        const img = document.createElement("img");
+        img.src = d.url;
+        img.alt = "Диплом / сертификат";
+        img.loading = "lazy";
+        thumb.appendChild(img);
+      }
+
+      btn.appendChild(thumb);
+      wrap.appendChild(btn);
+      slider.appendChild(wrap);
+    });
+
+    const hasOverflow = slider.scrollWidth > slider.clientWidth + 8;
+    if (nav) nav.hidden = !hasOverflow;
+    const step = () => Math.max(240, Math.floor(slider.clientWidth * 0.9));
+    prev && (prev.onclick = () => slider.scrollBy({ left: -step(), behavior: "smooth" }));
+    next && (next.onclick = () => slider.scrollBy({ left: step(), behavior: "smooth" }));
+  }
+
   // Hero
   setTextIfAny(qs(".hero .pill"), content.hero_pill);
   setTextIfAny(qs(".hero h1"), content.hero_h1);
@@ -434,6 +516,14 @@ function applySiteContent(content) {
     }
   }
 
+  // Diplomas
+  setTextIfAny(qs("#diplomasTitle"), content.diplomas_h2);
+  if (Array.isArray(content.diplomas_items)) renderDiplomas(content.diplomas_items);
+  else {
+    const s = qs("#diplomas");
+    if (s) s.hidden = true;
+  }
+
   // Stories
   setTextIfAny(qs("#stories h2"), content.stories_h2);
   if (Array.isArray(content.stories_items)) {
@@ -482,6 +572,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const policyClose = qs("#policyClose");
   const policyOk = qs("#policyOk");
 
+  const mediaDialog = qs("#mediaDialog");
+  const mediaTitle = qs("#mediaTitle");
+  const mediaBody = qs("#mediaBody");
+  const mediaClose = qs("#mediaClose");
+  const mediaOk = qs("#mediaOk");
+
   const themeToggle = qs("#themeToggle");
   themeToggle?.addEventListener("click", toggleTheme);
 
@@ -525,6 +621,42 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   loadContentAndLegal();
+
+  function openMedia(url, kind) {
+    if (!mediaDialog || !mediaBody) return;
+    const u = String(url || "").trim();
+    if (!u) return;
+    mediaBody.innerHTML = "";
+    const wrap = document.createElement("div");
+    wrap.className = "media-view";
+    if (kind === "pdf") {
+      const iframe = document.createElement("iframe");
+      iframe.src = u;
+      iframe.title = "PDF документ";
+      wrap.appendChild(iframe);
+      if (mediaTitle) mediaTitle.textContent = "Документ (PDF)";
+    } else {
+      const img = document.createElement("img");
+      img.src = u;
+      img.alt = "Диплом / сертификат";
+      wrap.appendChild(img);
+      if (mediaTitle) mediaTitle.textContent = "Диплом / сертификат";
+    }
+    mediaBody.appendChild(wrap);
+    mediaDialog.showModal?.();
+  }
+
+  mediaClose?.addEventListener("click", () => mediaDialog?.close?.());
+  mediaOk?.addEventListener("click", () => mediaDialog?.close?.());
+
+  // Delegated click for diplomas slider
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".diploma-btn");
+    if (!btn) return;
+    const url = btn.getAttribute("data-media-url");
+    const kind = btn.getAttribute("data-media-kind") || "image";
+    openMedia(url, kind);
+  });
 
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-scroll-to]");

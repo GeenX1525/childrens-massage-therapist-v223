@@ -33,7 +33,7 @@
       <div class="container header__inner">
         <a class="brand" href="#top" aria-label="На главную">
           <span class="brand__dot" aria-hidden="true"></span>
-          <span class="brand__text">Оксана</span>
+          <span class="brand__text">Оксана Сергеевна Давыдова</span>
           <span class="brand__sub">детский массажист</span>
         </a>
 
@@ -101,7 +101,7 @@
           <div class="cards">
             <article class="card card--wide">
               <p>
-                Я — Оксана, детский массажист с более чем 20-летним опытом работы
+                Меня зовут Оксана Сергеевна.Я - детский массажист с более чем 20-летним опытом работы
                 с малышами от рождения до 1,5 лет.
               </p>
               <p>
@@ -235,6 +235,19 @@
         </div>
       </section>
 
+      <section class="section section--alt" id="diplomas">
+        <div class="container">
+          <div class="section-head">
+            <h2 id="diplomasTitle">Дипломы и сертификаты</h2>
+            <div class="diplomas-nav" aria-label="Навигация по дипломам" hidden>
+              <button class="icon-btn" type="button" id="diplomasPrev" aria-label="Назад">‹</button>
+              <button class="icon-btn" type="button" id="diplomasNext" aria-label="Вперёд">›</button>
+            </div>
+          </div>
+          <div class="diplomas-slider" id="diplomasSlider" aria-live="polite"></div>
+        </div>
+      </section>
+
       <section class="section" id="stories">
         <div class="container">
           <h2>Истории из практики</h2>
@@ -331,6 +344,19 @@
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <dialog class="dialog" id="mediaDialog" aria-label="Просмотр документа">
+      <div class="dialog__head">
+        <h3 class="dialog__title" id="mediaTitle">Просмотр</h3>
+        <button class="icon-btn" type="button" id="mediaClose" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="dialog__body">
+        <div class="dialog__content" id="mediaBody"></div>
+      </div>
+      <div class="dialog__actions">
+        <button class="btn btn--secondary" type="button" id="mediaOk">Закрыть</button>
+      </div>
+    </dialog>
 
     <dialog class="dialog" id="consentDialog" aria-label="Согласие на обработку персональных данных">
       <div class="dialog__head">

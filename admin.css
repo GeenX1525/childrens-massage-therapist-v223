@@ -213,6 +213,31 @@ html[data-theme="dark"] .admin-details {
   display: none;
 }
 
+.admin-preview-wrap {
+  width: 100%;
+}
+
+.admin-preview--pdf {
+  display: none;
+  width: 100%;
+  height: 110px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(31, 29, 25, 0.04);
+  color: var(--title);
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  place-items: center;
+}
+
+html[data-theme="dark"] .admin-preview--pdf {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-item--dragging {
+  opacity: 0.55;
+}
+
 .admin-json {
   width: 100%;
   min-height: 340px;

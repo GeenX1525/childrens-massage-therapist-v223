@@ -212,6 +212,24 @@
                 </details>
 
                 <details class="admin-details">
+                  <summary class="admin-details__summary">Дипломы и сертификаты</summary>
+                  <div class="admin-details__body">
+                    <label class="field">
+                      <span class="field__label">Заголовок секции</span>
+                      <input type="text" id="c_diplomas_h2" />
+                    </label>
+                    <div class="admin-list">
+                      <div class="admin-list__head">
+                        <div class="muted small">Файлы (изображения или PDF, до 5 МБ). Перетаскивайте для сортировки.</div>
+                        <button class="btn btn--secondary" type="button" id="addDiplomaItem">Добавить файл</button>
+                      </div>
+                      <div class="admin-list__items" id="diplomasItems"></div>
+                      <div class="muted small" id="diplomasHint" aria-live="polite"></div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="admin-details">
                   <summary class="admin-details__summary">Истории из практики (параметры)</summary>
                   <div class="admin-details__body">
                     <label class="field"><span class="field__label">Заголовок секции</span><input type="text" id="c_stories_h2" /></label>
