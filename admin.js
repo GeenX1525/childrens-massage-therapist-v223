@@ -1,6 +1,33 @@
 const SITE_CONTENT_SINGLETON_ID = 1;
 const LEGAL_TEXTS_SINGLETON_ID = 1;
 
+const DIPLOMA_MAX_BYTES = 5 * 1024 * 1024;
+const DIPLOMA_ACCEPT_ATTR =
+  "image/jpeg,image/png,image/webp,image/gif,image/bmp,image/svg+xml,application/pdf,.pdf,.svg";
+const DIPLOMA_EXT_OK = new Set(["jpg", "jpeg", "png", "webp", "gif", "bmp", "svg", "pdf"]);
+
+function fileExt(name) {
+  const n = String(name || "");
+  const i = n.lastIndexOf(".");
+  return i >= 0 ? n.slice(i + 1).toLowerCase() : "";
+}
+
+function isAllowedDiplomaFile(file) {
+  if (!file || !file.name) return false;
+  const ext = fileExt(file.name);
+  if (ext && DIPLOMA_EXT_OK.has(ext)) return true;
+  const mt = String(file.type || "").toLowerCase();
+  if (mt === "application/pdf") return true;
+  if (mt.startsWith("image/")) return true;
+  return false;
+}
+
+function diplomaKindFromFile(file) {
+  const ext = fileExt(file.name);
+  if (ext === "pdf" || String(file.type || "").toLowerCase() === "application/pdf") return "pdf";
+  return "image";
+}
+
 function qs(sel, root = document) {
   return root.querySelector(sel);
 }
@@ -267,6 +294,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const diplomasItemsRoot = qs("#diplomasItems");
   const addDiplomaItemBtn = qs("#addDiplomaItem");
   const diplomasHint = qs("#diplomasHint");
+  const diplomasBulkDrop = qs("#diplomasBulkDrop");
+  const diplomasBulkInput = qs("#diplomasBulkInput");
 
   const heroBullets = mountTextList({
     root: qs("#heroBullets"),
@@ -602,6 +631,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     await refreshSessionUi();
     await Promise.all([loadContent(), loadLegal(), loadLeads()]);
+    mountDiplomasBulkDropzone();
   });
 
   logoutBtn?.addEventListener("click", async () => {
@@ -765,7 +795,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     return rows
       .map((row) => {
         const url = String(row.querySelector('[data-field="url"]')?.value || "").trim();
-        const kind = String(row.getAttribute("data-kind") || "").trim() || (url.toLowerCase().includes(".pdf") ? "pdf" : "image");
+        const attrKind = String(row.getAttribute("data-kind") || "").trim().toLowerCase();
+        const kind = attrKind === "pdf" || url.toLowerCase().includes(".pdf") ? "pdf" : "image";
         return url ? { url, kind } : null;
       })
       .filter(Boolean);
@@ -773,8 +804,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function uploadDiplomaFile(file) {
     if (!file) throw new Error("Файл не выбран");
-    if (file.size > 5 * 1024 * 1024) throw new Error("Файл больше 5 МБ. Уменьшите размер.");
-    const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+    if (!isAllowedDiplomaFile(file)) {
+      throw new Error("Неподдерживаемый формат. Допустимы изображения (JPG, PNG, WebP, GIF, BMP, SVG) и PDF.");
+    }
+    if (file.size > DIPLOMA_MAX_BYTES) throw new Error("Файл больше 5 МБ. Уменьшите размер.");
+    const ext = fileExt(file.name) || (diplomaKindFromFile(file) === "pdf" ? "pdf" : "jpg");
     const rand = Math.random().toString(16).slice(2);
     const path = `diplomas/${Date.now()}-${rand}.${ext}`;
     const { error: upErr } = await sb.storage.from("site-assets").upload(path, file, {
@@ -786,8 +820,108 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: pub } = sb.storage.from("site-assets").getPublicUrl(path);
     const url = pub?.publicUrl;
     if (!url) throw new Error("Не получили публичную ссылку на файл");
-    const kind = (file.type || "").toLowerCase().includes("pdf") || ext === "pdf" ? "pdf" : "image";
+    const kind = diplomaKindFromFile(file);
     return { url, kind };
+  }
+
+  let diplomasDomSyncAttached = false;
+  function syncDiplomasJsonFromDom() {
+    const obj2 = getContentObj();
+    if (!obj2) return;
+    ensureDiplomasDefaults(obj2);
+    if (cDiplomasH2) obj2.diplomas_h2 = String(cDiplomasH2.value || "").trim() || "Дипломы и сертификаты";
+    obj2.diplomas_items = readDiplomasFromUi();
+    setContentObj(obj2);
+    if (diplomasHint) setText(diplomasHint, "Изменения внесены в JSON. Нажмите «Сохранить (визуально)» в блоке «Тексты сайта».");
+  }
+
+  function attachDiplomasDomSyncOnce() {
+    if (diplomasDomSyncAttached || !diplomasItemsRoot) return;
+    diplomasDomSyncAttached = true;
+    diplomasItemsRoot.addEventListener("input", () => syncDiplomasJsonFromDom(), true);
+    diplomasItemsRoot.addEventListener("change", () => syncDiplomasJsonFromDom(), true);
+  }
+
+  let diplomasBulkMounted = false;
+  async function uploadDiplomaBatchFromFiles(fileList) {
+    const obj = getContentObj();
+    if (!obj) {
+      if (diplomasHint) setText(diplomasHint, "JSON невалидный. Сначала исправьте JSON в «Тексты сайта».");
+      return;
+    }
+    ensureDiplomasDefaults(obj);
+    const files = Array.from(fileList || []).filter(Boolean);
+    if (!files.length) return;
+
+    const skipped = [];
+    let ok = 0;
+    for (const f of files) {
+      if (!isAllowedDiplomaFile(f)) {
+        skipped.push(`${f.name} (формат)`);
+        continue;
+      }
+      if (f.size > DIPLOMA_MAX_BYTES) {
+        skipped.push(`${f.name} (>5 МБ)`);
+        continue;
+      }
+      try {
+        const out = await uploadDiplomaFile(f);
+        obj.diplomas_items.push(out);
+        ok += 1;
+      } catch (e) {
+        skipped.push(`${f.name} (${e?.message || "ошибка"})`);
+      }
+    }
+    setContentObj(obj);
+    rebuildDiplomasUiFromJson();
+    const parts = [];
+    if (ok) parts.push(`Загружено файлов: ${ok}`);
+    if (skipped.length) {
+      const sample = skipped.slice(0, 4).join("; ");
+      parts.push(`Пропущено: ${sample}${skipped.length > 4 ? "…" : ""}`);
+    }
+    if (diplomasHint) setText(diplomasHint, `${parts.join(". ") || "Нет подходящих файлов."} Сохраните блок «Тексты сайта».`);
+  }
+
+  function mountDiplomasBulkDropzone() {
+    if (diplomasBulkMounted || !diplomasBulkDrop || !diplomasBulkInput) return;
+    diplomasBulkMounted = true;
+    diplomasBulkInput.setAttribute("accept", DIPLOMA_ACCEPT_ATTR);
+
+    const highlight = (on) => diplomasBulkDrop.classList.toggle("admin-dropzone--active", Boolean(on));
+
+    diplomasBulkDrop.addEventListener("click", () => diplomasBulkInput.click());
+    diplomasBulkDrop.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        diplomasBulkInput.click();
+      }
+    });
+
+    diplomasBulkInput.addEventListener("change", () => {
+      const files = diplomasBulkInput.files;
+      diplomasBulkInput.value = "";
+      if (files?.length) uploadDiplomaBatchFromFiles(files);
+    });
+
+    diplomasBulkDrop.addEventListener("dragenter", (e) => {
+      if (e.dataTransfer?.types?.includes("Files")) highlight(true);
+    });
+    diplomasBulkDrop.addEventListener("dragleave", (e) => {
+      if (!diplomasBulkDrop.contains(e.relatedTarget)) highlight(false);
+    });
+    diplomasBulkDrop.addEventListener("dragover", (e) => {
+      if (!e.dataTransfer?.types?.includes("Files")) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      highlight(true);
+    });
+    diplomasBulkDrop.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      highlight(false);
+      const files = e.dataTransfer?.files;
+      if (files?.length) await uploadDiplomaBatchFromFiles(files);
+    });
   }
 
   function rebuildDiplomasUiFromJson() {
@@ -810,18 +944,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     diplomasItemsRoot.innerHTML = "";
     let draggingEl = null;
 
-    const syncBackToJson = () => {
-      const obj2 = getContentObj();
-      if (!obj2) return;
-      ensureDiplomasDefaults(obj2);
-      if (cDiplomasH2) obj2.diplomas_h2 = String(cDiplomasH2.value || "").trim() || "Дипломы и сертификаты";
-      obj2.diplomas_items = readDiplomasFromUi();
-      setContentObj(obj2);
-      if (diplomasHint) setText(diplomasHint, "Изменения внесены в JSON. Нажмите «Сохранить» в «Тексты сайта».");
-    };
-
     items.forEach((d, idx) => {
-      const url = el("input", { type: "text", "data-field": "url", placeholder: "Ссылка на файл (изображение или PDF)" });
+      const url = el("input", { type: "text", "data-field": "url", placeholder: "Публичная ссылка (https…) или загрузите файл ниже" });
       url.value = d.url;
 
       const preview = el("div", { class: "admin-preview-wrap" });
@@ -833,7 +957,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       let row = null;
       const syncPreview = () => {
         const u = String(url.value || "").trim();
-        const kind = String(row?.getAttribute("data-kind") || "").trim() || (u.toLowerCase().includes(".pdf") ? "pdf" : "image");
+        const kind =
+          String(row?.getAttribute("data-kind") || "").trim() || (u.toLowerCase().includes(".pdf") ? "pdf" : "image");
         if (!u) {
           img.style.display = "none";
           pdfBadge.style.display = "none";
@@ -851,12 +976,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       };
 
-      const file = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp,application/pdf" });
-      const uploadBtn = el("button", { type: "button", class: "btn btn--secondary", text: "Загрузить" });
+      const file = el("input", { type: "file", accept: DIPLOMA_ACCEPT_ATTR });
+      const uploadBtn = el("button", { type: "button", class: "btn btn--secondary", text: "Загрузить выбранное" });
       const uploadHint = el("div", { class: "muted small", text: "" });
 
-      uploadBtn.addEventListener("click", async () => {
-        const f = file.files?.[0];
+      const runUpload = async (f) => {
         if (!f) {
           uploadHint.textContent = "Выберите файл.";
           return;
@@ -868,16 +992,51 @@ document.addEventListener("DOMContentLoaded", async () => {
           row.setAttribute("data-kind", out.kind);
           url.value = out.url;
           syncPreview();
-          syncBackToJson();
+          syncDiplomasJsonFromDom();
           uploadHint.textContent = "Готово.";
         } catch (e) {
           uploadHint.textContent = `Ошибка: ${e?.message || "не удалось"}`;
         } finally {
           uploadBtn.disabled = false;
         }
-      });
+      };
+
+      uploadBtn.addEventListener("click", () => runUpload(file.files?.[0]));
       file.addEventListener("change", () => {
-        if (file.files?.[0]) uploadBtn.click();
+        if (file.files?.[0]) runUpload(file.files[0]);
+      });
+
+      const dropInner = el("div", { class: "admin-dropzone admin-dropzone--row", tabindex: "-1" });
+      dropInner.appendChild(el("span", { class: "admin-dropzone__title", text: "Перетащите файл сюда" }));
+      dropInner.appendChild(el("span", { class: "admin-dropzone__sub", text: "или нажмите, чтобы выбрать с компьютера" }));
+
+      const highlight = (on) => dropInner.classList.toggle("admin-dropzone--active", Boolean(on));
+
+      dropInner.addEventListener("click", () => file.click());
+      dropInner.addEventListener("dragenter", (e) => {
+        if (e.dataTransfer?.types?.includes("Files")) highlight(true);
+      });
+      dropInner.addEventListener("dragleave", (e) => {
+        if (!dropInner.contains(e.relatedTarget)) highlight(false);
+      });
+      dropInner.addEventListener("dragover", (e) => {
+        if (!e.dataTransfer?.types?.includes("Files")) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+        highlight(true);
+      });
+      dropInner.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        highlight(false);
+        const f = e.dataTransfer?.files?.[0];
+        if (!f) return;
+        const list = Array.from(e.dataTransfer.files || []);
+        if (list.length > 1) {
+          uploadHint.textContent = "В одну карточку — один файл. Лишние добавьте через область над списком.";
+        }
+        runUpload(f);
       });
 
       const removeBtn = el("button", { type: "button", class: "btn btn--secondary admin-item__remove", text: "Удалить" });
@@ -887,27 +1046,51 @@ document.addEventListener("DOMContentLoaded", async () => {
         removeBtn,
       ]);
 
-      row = el("div", { class: "admin-item", draggable: "true", "data-kind": d.kind }, [
+      const grip = el("div", {
+        class: "admin-diploma-grip",
+        title: "Потяните, чтобы изменить порядок",
+        text: "⠿",
+        role: "button",
+        tabindex: "0",
+        "aria-grabbed": "false",
+      });
+      grip.setAttribute("draggable", "true");
+
+      const body = el("div", { class: "admin-diploma-body" }, [
         headRow,
         preview,
-        el("div", { class: "admin-item__cols" }, [url]),
+        url,
+        dropInner,
         el("div", { class: "admin-item__cols" }, [file, uploadBtn]),
         uploadHint,
       ]);
 
-      // Drag & drop ordering
-      row.addEventListener("dragstart", () => {
+      const layout = el("div", { class: "admin-diploma-layout" }, [grip, body]);
+
+      row = el("div", { class: "admin-item", "data-kind": d.kind }, [layout]);
+
+      grip.addEventListener("dragstart", (e) => {
         draggingEl = row;
         row.classList.add("admin-item--dragging");
+        grip.setAttribute("aria-grabbed", "true");
+        try {
+          e.dataTransfer.setData("text/plain", "diploma-reorder");
+          e.dataTransfer.effectAllowed = "move";
+        } catch {
+          /* ignore */
+        }
       });
-      row.addEventListener("dragend", () => {
+      grip.addEventListener("dragend", () => {
         draggingEl = null;
         row.classList.remove("admin-item--dragging");
-        syncBackToJson();
+        grip.setAttribute("aria-grabbed", "false");
+        syncDiplomasJsonFromDom();
       });
+
       row.addEventListener("dragover", (e) => {
+        if (!draggingEl) return;
         e.preventDefault();
-        if (!draggingEl || draggingEl === row) return;
+        if (draggingEl === row) return;
         const rect = row.getBoundingClientRect();
         const before = e.clientY < rect.top + rect.height / 2;
         diplomasItemsRoot.insertBefore(draggingEl, before ? row : row.nextSibling);
@@ -917,22 +1100,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         const u = String(url.value || "").trim();
         row.setAttribute("data-kind", u.toLowerCase().includes(".pdf") ? "pdf" : "image");
         syncPreview();
-        syncBackToJson();
+        syncDiplomasJsonFromDom();
       });
 
       removeBtn.addEventListener("click", () => {
         row.remove();
-        syncBackToJson();
+        syncDiplomasJsonFromDom();
       });
 
       diplomasItemsRoot.appendChild(row);
       syncPreview();
     });
 
-    if (!items.length && diplomasHint) setText(diplomasHint, "Пока файлов нет. Нажмите «Добавить файл».");
+    if (!items.length && diplomasHint) setText(diplomasHint, "Пока файлов нет — перетащите в область над списком или нажмите «Добавить файл».");
 
-    diplomasItemsRoot.addEventListener("input", () => syncBackToJson(), true);
-    diplomasItemsRoot.addEventListener("change", () => syncBackToJson(), true);
+    attachDiplomasDomSyncOnce();
   }
 
   function addDiplomaUi() {
@@ -1243,6 +1425,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const ok = await refreshSessionUi();
   if (ok) {
+    mountDiplomasBulkDropzone();
     await Promise.all([loadContent(), loadLegal(), loadLeads()]);
     rebuildStoriesUiFromJson();
     loadContentUiFromJson();

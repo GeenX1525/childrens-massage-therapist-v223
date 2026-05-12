@@ -218,11 +218,28 @@
                       <span class="field__label">Заголовок секции</span>
                       <input type="text" id="c_diplomas_h2" />
                     </label>
+                    <p class="muted small">
+                      Файлы загружаются в Supabase Storage и появляются на сайте по публичной ссылке. С компьютера: перетащите в область ниже или нажмите «Выбрать файл» в карточке.
+                      Путь вида <code>C:\…</code> из адресной строки Проводника в браузере вставить нельзя — это ограничение безопасности; уже выложенный документ можно указать полем «Ссылка на файл» (https…).
+                    </p>
                     <div class="admin-list">
                       <div class="admin-list__head">
-                        <div class="muted small">Файлы (изображения или PDF, до 5 МБ). Перетаскивайте для сортировки.</div>
+                        <div class="muted small">
+                          JPG, PNG, WebP, GIF, BMP, SVG, PDF — до 5 МБ. Сортировка: тяните за ручку слева в карточке.
+                        </div>
                         <button class="btn btn--secondary" type="button" id="addDiplomaItem">Добавить файл</button>
                       </div>
+                      <div
+                        class="admin-dropzone admin-dropzone--bulk"
+                        id="diplomasBulkDrop"
+                        tabindex="0"
+                        role="button"
+                        aria-label="Добавить дипломы: перетащите файлы или нажмите для выбора"
+                      >
+                        <span class="admin-dropzone__title">Перетащите сюда файлы с компьютера</span>
+                        <span class="admin-dropzone__sub">или кликните, чтобы выбрать несколько файлов сразу</span>
+                      </div>
+                      <input type="file" id="diplomasBulkInput" hidden multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/svg+xml,application/pdf,.pdf,.svg" />
                       <div class="admin-list__items" id="diplomasItems"></div>
                       <div class="muted small" id="diplomasHint" aria-live="polite"></div>
                     </div>
@@ -346,7 +363,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-config.js?v=20260508-1"></script>
-    <script src="./admin.js?v=20260508-1"></script>
+    <script src="./admin.js?v=20260512-1"></script>
   </body>
 </html>
 
