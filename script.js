@@ -423,7 +423,7 @@ function applySiteContent(content) {
       } else {
         const img = document.createElement("img");
         img.src = d.url;
-        img.alt = "Диплом / сертификат";
+        img.alt = "Документ";
         img.loading = "lazy";
         thumb.appendChild(img);
       }
@@ -638,9 +638,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       const img = document.createElement("img");
       img.src = u;
-      img.alt = "Диплом / сертификат";
+      img.alt = "Документ";
       wrap.appendChild(img);
-      if (mediaTitle) mediaTitle.textContent = "Диплом / сертификат";
+      if (mediaTitle) mediaTitle.textContent = "Документ";
     }
     mediaBody.appendChild(wrap);
     mediaDialog.showModal?.();

@@ -62,6 +62,19 @@
         </section>
 
         <section class="admin__card">
+          <h2>Мои документы</h2>
+          <p class="muted small">
+            Рекомендации: <b>JPG/PNG/WebP/GIF/BMP/SVG/PDF</b>, до <b>5 МБ</b> за файл. Загрузка в
+            <b>Supabase Storage</b> (bucket <b>site-assets</b>), затем файл добавляется в список на сайте. Можно перетащить файл в строку ниже или выбрать кнопкой «Выберите файл».
+          </p>
+          <div class="admin-row admin-row--diploma-quick" id="diplomasQuickRow">
+            <input type="file" id="diplomasQuickFile" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/svg+xml,application/pdf,.pdf,.svg" />
+            <button class="btn" type="button" id="uploadDiplomaQuickBtn">Загрузить</button>
+          </div>
+          <div class="muted small" id="diplomasQuickHint" aria-live="polite"></div>
+        </section>
+
+        <section class="admin__card">
           <h2>Тексты сайта</h2>
           <p class="muted small">Редактируется структура всех секций. Сохраняется в Supabase и подтягивается на сайте при загрузке.</p>
           <div class="admin-row">
@@ -212,34 +225,20 @@
                 </details>
 
                 <details class="admin-details">
-                  <summary class="admin-details__summary">Дипломы и сертификаты</summary>
+                  <summary class="admin-details__summary">Мои документы</summary>
                   <div class="admin-details__body">
                     <label class="field">
                       <span class="field__label">Заголовок секции</span>
                       <input type="text" id="c_diplomas_h2" />
                     </label>
                     <p class="muted small">
-                      Файлы загружаются в Supabase Storage и появляются на сайте по публичной ссылке. С компьютера: перетащите в область ниже или нажмите «Выбрать файл» в карточке.
-                      Путь вида <code>C:\…</code> из адресной строки Проводника в браузере вставить нельзя — это ограничение безопасности; уже выложенный документ можно указать полем «Ссылка на файл» (https…).
+                      Загрузка файлов с компьютера — в отдельной карточке <b>«Мои документы»</b> над блоком «Тексты сайта» (как у фото на главной). Здесь: заголовок секции, порядок и ссылки. Путь <code>C:\…</code> из Проводника вставить нельзя; для уже размещённого файла укажите <b>https…</b> в поле ссылки.
                     </p>
                     <div class="admin-list">
                       <div class="admin-list__head">
-                        <div class="muted small">
-                          JPG, PNG, WebP, GIF, BMP, SVG, PDF — до 5 МБ. Сортировка: тяните за ручку слева в карточке.
-                        </div>
-                        <button class="btn btn--secondary" type="button" id="addDiplomaItem">Добавить файл</button>
+                        <div class="muted small">Порядок на сайте: тяните за ручку ⠿ слева.</div>
+                        <button class="btn btn--secondary" type="button" id="addDiplomaItem">Пустая строка (только ссылка)</button>
                       </div>
-                      <div
-                        class="admin-dropzone admin-dropzone--bulk"
-                        id="diplomasBulkDrop"
-                        tabindex="0"
-                        role="button"
-                        aria-label="Добавить дипломы: перетащите файлы или нажмите для выбора"
-                      >
-                        <span class="admin-dropzone__title">Перетащите сюда файлы с компьютера</span>
-                        <span class="admin-dropzone__sub">или кликните, чтобы выбрать несколько файлов сразу</span>
-                      </div>
-                      <input type="file" id="diplomasBulkInput" hidden multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/svg+xml,application/pdf,.pdf,.svg" />
                       <div class="admin-list__items" id="diplomasItems"></div>
                       <div class="muted small" id="diplomasHint" aria-live="polite"></div>
                     </div>
@@ -363,7 +362,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-config.js?v=20260508-1"></script>
-    <script src="./admin.js?v=20260512-1"></script>
+    <script src="./admin.js?v=20260512-2"></script>
   </body>
 </html>
 
