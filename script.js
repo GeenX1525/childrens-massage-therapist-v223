@@ -586,7 +586,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let pendingLead = null;
 
   async function loadContentAndLegal() {
-    // 1) Supabase (source of truth when configured)
+    let usedSupabaseContent = false;
+
+    // 1) Supabase (источник правды, когда настроен)
     if (sb) {
       try {
         const [{ data: contentRow, error: contentErr }, { data: legalRow, error: legalErr }] = await Promise.all([
@@ -597,23 +599,26 @@ document.addEventListener("DOMContentLoaded", () => {
         if (contentErr) console.warn("[content] Supabase error:", contentErr);
         if (legalErr) console.warn("[legal] Supabase error:", legalErr);
 
-        if (contentRow?.content_json) applySiteContent(contentRow.content_json);
+        if (contentRow?.content_json) {
+          applySiteContent(contentRow.content_json);
+          usedSupabaseContent = true;
+        }
         if (legalRow) {
           legalTexts = legalRow;
           applyLegalTexts(legalRow);
         }
-
-        // If Supabase worked, we can still allow local draft overrides below.
       } catch (e) {
         console.warn("[supabase] Unexpected error:", e);
       }
     }
 
-    // 2) Published content for all viewers (stored in repo) - fallback
-    const published = await loadPublishedContentJson();
-    if (published) applySiteContent(published);
+    // 2) content.json из репозитория — только если из Supabase контент не подтянулся
+    if (!usedSupabaseContent) {
+      const published = await loadPublishedContentJson();
+      if (published) applySiteContent(published);
+    }
 
-    // 3) Local overrides for the temporary admin (drafts on this device)
+    // 3) Локальные черновики (admin-temp и т.п.) — поверх текущего
     const localContent = getLocalContent();
     const localLegal = getLocalLegal();
     if (localContent) applySiteContent(localContent);
