@@ -75,6 +75,22 @@ function getSupabase() {
   return window.supabase.createClient(url, key);
 }
 
+/** Имя Storage bucket (по умолчанию site-assets). Переопределение: window.SUPABASE_STORAGE_BUCKET в supabase-config.js */
+function getStorageBucketId() {
+  const b = window.SUPABASE_STORAGE_BUCKET;
+  if (typeof b === "string" && b.trim().length) return b.trim();
+  return "site-assets";
+}
+
+function storageErrorHint(message) {
+  const m = String(message || "").toLowerCase();
+  if (m.includes("bucket not found")) {
+    const id = getStorageBucketId();
+    return ` Создайте в Supabase → Storage публичный bucket «${id}» (см. SUPABASE_SETUP.md). Если bucket уже есть под другим именем — в supabase-config.js: window.SUPABASE_STORAGE_BUCKET = "имя-bucket";`;
+  }
+  return "";
+}
+
 function prettyJson(obj) {
   return JSON.stringify(obj, null, 2);
 }
@@ -492,17 +508,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
     const path = `hero/hero.${ext}`;
 
-    const { error: upErr } = await sb.storage.from("site-assets").upload(path, f, {
+    const { error: upErr } = await sb.storage.from(getStorageBucketId()).upload(path, f, {
       upsert: true,
       contentType: f.type || undefined,
       cacheControl: "3600",
     });
     if (upErr) {
-      setText(uploadHint, `Ошибка загрузки: ${upErr.message}`);
+      setText(uploadHint, `Ошибка загрузки: ${upErr.message}${storageErrorHint(upErr.message)}`);
       return;
     }
 
-    const { data: pub } = sb.storage.from("site-assets").getPublicUrl(path);
+    const { data: pub } = sb.storage.from(getStorageBucketId()).getPublicUrl(path);
     const url = pub?.publicUrl;
     if (!url) {
       setText(uploadHint, "Загрузили файл, но не получили ссылку.");
@@ -814,13 +830,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ext = fileExt(file.name) || (diplomaKindFromFile(file) === "pdf" ? "pdf" : "jpg");
     const rand = Math.random().toString(16).slice(2);
     const path = `diplomas/${Date.now()}-${rand}.${ext}`;
-    const { error: upErr } = await sb.storage.from("site-assets").upload(path, file, {
+    const { error: upErr } = await sb.storage.from(getStorageBucketId()).upload(path, file, {
       upsert: false,
       contentType: file.type || undefined,
       cacheControl: "3600",
     });
     if (upErr) throw upErr;
-    const { data: pub } = sb.storage.from("site-assets").getPublicUrl(path);
+    const { data: pub } = sb.storage.from(getStorageBucketId()).getPublicUrl(path);
     const url = pub?.publicUrl;
     if (!url) throw new Error("Не получили публичную ссылку на файл");
     const kind = diplomaKindFromFile(file);
@@ -847,7 +863,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (diplomasQuickFile) diplomasQuickFile.value = "";
       setText(diplomasQuickHint, "Загружено и сохранено в Supabase.");
     } catch (e) {
-      setText(diplomasQuickHint, `Ошибка: ${e?.message || "не удалось"}`);
+      setText(diplomasQuickHint, `Ошибка: ${e?.message || "не удалось"}${storageErrorHint(e?.message)}`);
     }
   }
 
@@ -1060,13 +1076,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const rand = Math.random().toString(16).slice(2);
     const path = `stories/${Date.now()}-${rand}.${ext}`;
-    const { error: upErr } = await sb.storage.from("site-assets").upload(path, file, {
+    const { error: upErr } = await sb.storage.from(getStorageBucketId()).upload(path, file, {
       upsert: false,
       contentType: file.type || undefined,
       cacheControl: "3600",
     });
     if (upErr) throw upErr;
-    const { data: pub } = sb.storage.from("site-assets").getPublicUrl(path);
+    const { data: pub } = sb.storage.from(getStorageBucketId()).getPublicUrl(path);
     const url = pub?.publicUrl;
     if (!url) throw new Error("Не получили публичную ссылку на фото");
     return url;
@@ -1129,7 +1145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           syncPreview();
           uploadHint.textContent = "Готово. Не забудьте «Сохранить» тексты сайта.";
         } catch (e) {
-          uploadHint.textContent = `Ошибка: ${e?.message || "не удалось"}`;
+          uploadHint.textContent = `Ошибка: ${e?.message || "не удалось"}${storageErrorHint(e?.message)}`;
         } finally {
           uploadBtn.disabled = false;
         }

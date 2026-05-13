@@ -216,12 +216,27 @@ for select
 to anon
 using (bucket_id = 'site-assets');
 
--- Authenticated upload/update/delete
+-- Authenticated upload/update/delete (раздельно: INSERT с RLS надёжнее, чем FOR ALL)
 drop policy if exists "admins write site-assets" on storage.objects;
-create policy "admins write site-assets"
+drop policy if exists "admins insert site-assets" on storage.objects;
+create policy "admins insert site-assets"
 on storage.objects
-for all
+for insert
+to authenticated
+with check (bucket_id = 'site-assets');
+
+drop policy if exists "admins update site-assets" on storage.objects;
+create policy "admins update site-assets"
+on storage.objects
+for update
 to authenticated
 using (bucket_id = 'site-assets')
 with check (bucket_id = 'site-assets');
+
+drop policy if exists "admins delete site-assets" on storage.objects;
+create policy "admins delete site-assets"
+on storage.objects
+for delete
+to authenticated
+using (bucket_id = 'site-assets');
 

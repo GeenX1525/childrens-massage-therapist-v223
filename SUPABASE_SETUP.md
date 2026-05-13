@@ -17,10 +17,19 @@
 ## 3) Создать bucket для фото
 
 Storage → **Create bucket**
-- Name: `site-assets`
-- Public bucket: **ON**
 
-> В `schema.sql` уже есть политики на `storage.objects` (для публичного чтения и загрузки для авторизованных).
+- **Name:** `site-assets` (имя должно совпадать с кодом, если не задаёте своё — см. ниже)
+- **Public bucket:** **ON** (обязательно, иначе картинки на сайте не откроются по прямой ссылке)
+
+После создания bucket выполните политики из `supabase/schema.sql` (раздел Storage policies), если ещё не применяли весь файл.
+
+Если вы назвали bucket иначе (например `public-assets`), в `supabase-config.js` добавьте:
+
+```js
+window.SUPABASE_STORAGE_BUCKET = "public-assets";
+```
+
+> В `schema.sql` политики привязаны к `bucket_id = 'site-assets'`. При другом имени bucket создайте аналогичные политики в SQL Editor для вашего имени или переименуйте bucket в `site-assets`.
 
 ## 4) Создать админов (2 пользователя)
 
