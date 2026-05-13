@@ -848,6 +848,7 @@ html[data-theme="dark"] .footer {
 .dialog__content {
   font-size: 14px;
   color: var(--text);
+  pointer-events: auto;
 }
 
 .dialog__content h4 {
@@ -892,11 +893,15 @@ html[data-theme="dark"] .footer {
 /* Dialog */
 .dialog {
   width: min(820px, calc(100vw - 28px));
+  max-height: min(90dvh, calc(100vh - 24px));
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   padding: 0;
   overflow: hidden;
   box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  margin: auto;
 }
 
 .dialog::backdrop {
@@ -904,6 +909,7 @@ html[data-theme="dark"] .footer {
 }
 
 .dialog__head {
+  flex: 0 0 auto;
   padding: 16px 16px 10px;
   display: flex;
   align-items: center;
@@ -932,8 +938,14 @@ html[data-theme="dark"] .icon-btn {
 }
 
 .dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 14px 16px;
   background: var(--card-solid);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
 }
 
 html[data-theme="dark"] .dialog__body {
@@ -957,6 +969,7 @@ html[data-theme="dark"] .dialog__pre {
 }
 
 .dialog__actions {
+  flex: 0 0 auto;
   display: flex;
   justify-content: flex-end;
   gap: 10px;

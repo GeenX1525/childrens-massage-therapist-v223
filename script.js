@@ -777,9 +777,22 @@ document.addEventListener("DOMContentLoaded", () => {
   consentCancel?.addEventListener("click", closeConsent);
 
   openPolicy?.addEventListener("click", () => {
-    if (policyDialog?.showModal) policyDialog.showModal();
-    else showToast("Ваш браузер не поддерживает окно политики.");
+    if (!policyDialog?.showModal) {
+      showToast("Ваш браузер не поддерживает окно политики.");
+      return;
+    }
+    const consentWasOpen = Boolean(consentDialog?.open);
+    if (consentWasOpen) consentDialog.close();
+    policyDialog.dataset.returnToConsent = consentWasOpen ? "1" : "";
+    policyDialog.showModal();
   });
+
+  policyDialog?.addEventListener("close", () => {
+    if (policyDialog.dataset.returnToConsent !== "1") return;
+    delete policyDialog.dataset.returnToConsent;
+    if (pendingLead && consentDialog?.showModal) consentDialog.showModal();
+  });
+
   policyClose?.addEventListener("click", () => policyDialog?.close?.());
   policyOk?.addEventListener("click", () => policyDialog?.close?.());
 
