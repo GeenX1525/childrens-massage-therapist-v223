@@ -790,7 +790,17 @@ document.addEventListener("DOMContentLoaded", () => {
   policyDialog?.addEventListener("close", () => {
     if (policyDialog.dataset.returnToConsent !== "1") return;
     delete policyDialog.dataset.returnToConsent;
-    if (pendingLead && consentDialog?.showModal) consentDialog.showModal();
+    if (!pendingLead || !consentDialog?.showModal) return;
+    // Нельзя вызывать showModal(согласие) в том же тике, что и close(политика) — в части браузеров
+    // политика остаётся поверх страницы. Откладываем повторное открытие согласия.
+    window.setTimeout(() => {
+      if (!pendingLead) return;
+      try {
+        consentDialog.showModal();
+      } catch (e) {
+        console.warn("[dialog] reopen consent after policy:", e);
+      }
+    }, 50);
   });
 
   policyClose?.addEventListener("click", () => policyDialog?.close?.());
