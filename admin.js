@@ -495,6 +495,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function uploadHero() {
     setText(uploadHint, "");
+    const { data: authSess } = await sb.auth.getSession();
+    if (!authSess?.session) {
+      setText(uploadHint, "Сначала войдите в админку (форма «Вход» выше). Без входа загрузка в Storage недоступна.");
+      return;
+    }
     const f = heroFile?.files?.[0];
     if (!f) {
       setText(uploadHint, "Выберите файл.");
@@ -849,6 +854,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     setText(diplomasQuickHint, "");
     if (!file) {
       setText(diplomasQuickHint, "Выберите файл.");
+      return;
+    }
+    const { data: authSess } = await sb.auth.getSession();
+    if (!authSess?.session) {
+      setText(diplomasQuickHint, "Сначала войдите в админку (форма «Вход» выше). Без входа загрузка в Storage недоступна.");
       return;
     }
     try {

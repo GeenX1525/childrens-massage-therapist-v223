@@ -49,6 +49,12 @@ body {
   gap: 16px;
 }
 
+/* Атрибут hidden + display:grid у автора — в части браузеров панель остаётся видимой; без входа тогда ломается Storage (RLS). */
+#appGrid[hidden],
+#loginCard[hidden] {
+  display: none !important;
+}
+
 .admin__card--wide {
   grid-column: 1 / -1;
 }
