@@ -587,6 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadContentAndLegal() {
     let usedSupabaseContent = false;
+    let usedSupabaseLegal = false;
 
     // 1) Supabase (источник правды, когда настроен)
     if (sb) {
@@ -606,6 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (legalRow) {
           legalTexts = legalRow;
           applyLegalTexts(legalRow);
+          usedSupabaseLegal = true;
         }
       } catch (e) {
         console.warn("[supabase] Unexpected error:", e);
@@ -618,11 +620,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (published) applySiteContent(published);
     }
 
-    // 3) Локальные черновики (admin-temp и т.п.) — поверх текущего
-    const localContent = getLocalContent();
-    const localLegal = getLocalLegal();
-    if (localContent) applySiteContent(localContent);
-    if (localLegal) applyLegalTexts(localLegal);
+    // 3) Локальные черновики (admin-temp) — только если для этого типа данных нет строки из Supabase
+    if (!usedSupabaseContent) {
+      const localContent = getLocalContent();
+      if (localContent) applySiteContent(localContent);
+    }
+    if (!usedSupabaseLegal) {
+      const localLegal = getLocalLegal();
+      if (localLegal) applyLegalTexts(localLegal);
+    }
   }
 
   loadContentAndLegal();

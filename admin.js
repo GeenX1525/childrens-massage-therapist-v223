@@ -441,7 +441,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     try {
       await upsertContentJson(parsed.value);
-      setText(contentHint, "Сохранено.");
+      setText(contentHint, "Сохранено (только содержимое JSON ниже). Правки из визуального редактора — кнопка «Сохранить (визуально)».");
     } catch (e) {
       setText(contentHint, `Ошибка сохранения: ${e?.message || "ошибка"}${e?.status ? ` (status: ${e.status})` : ""}`);
     }
@@ -468,6 +468,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function saveLegal() {
     setText(legalHint, "");
+    const { data: authLegal } = await sb.auth.getSession();
+    if (!authLegal?.session) {
+      setText(legalHint, "Сначала войдите в админку — без входа юридические тексты в базу не сохраняются.");
+      return;
+    }
     const payload = {
       id: LEGAL_TEXTS_SINGLETON_ID,
       version: String(Date.now()),
@@ -697,6 +702,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (cStoriesH2) cStoriesH2.value = obj.stories_h2 || "Истории из практики";
     if (cStoriesInitial) cStoriesInitial.value = String(Number(obj.stories_initial_count || 6) || 6);
+    if (storiesH2) storiesH2.value = cStoriesH2?.value || "";
+    if (storiesInitialCount) storiesInitialCount.value = cStoriesInitial?.value || "6";
 
     if (cFormH2) cFormH2.value = obj.form_h2 || "";
     if (cFormLead) cFormLead.value = obj.form_lead || "";
@@ -706,11 +713,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateFilledUi(appGrid);
   }
 
+  function readStoriesItemsFromStoriesSection() {
+    if (!storiesItems) return null;
+    const allRows = Array.from(storiesItems.querySelectorAll(".admin-item"));
+    return allRows
+      .map((r) => readStoryFromRow(r))
+      .filter((v) => v.photo_url || v.parent_name || v.child_age || v.problem || v.text || v.recommendation);
+  }
+
   function buildContentFromFields() {
     const base = getContentObj() || {};
     const childCards = resultChildItems.getValues();
     const parentCards = resultParentItems.getValues();
     const diplomasItems = readDiplomasFromUi();
+    const storiesFromSection = readStoriesItemsFromStoriesSection();
+    const storiesH2Val = String(storiesH2?.value ?? cStoriesH2?.value ?? "").trim();
+    const storiesInitialRaw = storiesInitialCount?.value ?? cStoriesInitial?.value ?? 6;
     return {
       ...base,
       hero_pill: cHeroPill?.value || "",
@@ -741,8 +759,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       diplomas_h2: cDiplomasH2?.value || "Мои документы",
       diplomas_items: diplomasItems,
 
-      stories_h2: cStoriesH2?.value || "",
-      stories_initial_count: Math.max(1, Math.min(9, Number(cStoriesInitial?.value || 6) || 6)),
+      stories_h2: storiesH2Val,
+      stories_initial_count: Math.max(1, Math.min(9, Number(storiesInitialRaw) || 6)),
+      ...(storiesFromSection !== null ? { stories_items: storiesFromSection } : {}),
 
       form_h2: cFormH2?.value || "",
       form_lead: cFormLead?.value || "",
@@ -912,7 +931,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (cDiplomasH2) obj2.diplomas_h2 = String(cDiplomasH2.value || "").trim() || "Мои документы";
     obj2.diplomas_items = readDiplomasFromUi();
     setContentObj(obj2);
-    if (diplomasHint) setText(diplomasHint, "Изменения внесены в JSON. Нажмите «Сохранить (визуально)» в блоке «Тексты сайта».");
+      if (diplomasHint) setText(diplomasHint, "Изменения внесены в JSON. Нажмите «Сохранить (визуально)» или «Сохранить (JSON)» в блоке «Тексты сайта».");
   }
 
   function attachDiplomasDomSyncOnce() {
@@ -1153,7 +1172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const url = await uploadStoryPhoto(f);
           photo.value = url;
           syncPreview();
-          uploadHint.textContent = "Готово. Не забудьте «Сохранить» тексты сайта.";
+          uploadHint.textContent = "Готово. Нажмите «Сохранить (визуально)» или «Сохранить (JSON)» в блоке «Тексты сайта».";
         } catch (e) {
           uploadHint.textContent = `Ошибка: ${e?.message || "не удалось"}${storageErrorHint(e?.message)}`;
         } finally {
@@ -1199,7 +1218,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const allRows = Array.from(storiesItems.querySelectorAll(".admin-item"));
         obj2.stories_items = allRows.map((r) => readStoryFromRow(r)).filter((v) => v.photo_url || v.parent_name || v.child_age || v.problem || v.text || v.recommendation);
         setContentObj(obj2);
-        setText(storiesHint, "Изменения внесены в JSON. Нажмите «Сохранить» в «Тексты сайта».");
+        if (cStoriesH2 && storiesH2) cStoriesH2.value = storiesH2.value;
+        if (cStoriesInitial && storiesInitialCount) cStoriesInitial.value = storiesInitialCount.value;
+        setText(storiesHint, "Изменения внесены в JSON. Нажмите «Сохранить (визуально)» или «Сохранить (JSON)» в «Тексты сайта».");
       };
 
       row.addEventListener("input", () => syncBackToJson(), true);
