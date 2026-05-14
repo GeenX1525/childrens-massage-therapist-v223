@@ -289,8 +289,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const storiesReloadBtn = qs("#storiesReloadBtn");
   const addStoryBtn = qs("#addStoryBtn");
   const storiesItems = qs("#storiesItems");
-  const storiesH2 = qs("#storiesH2");
-  const storiesInitialCount = qs("#storiesInitialCount");
   const storiesHint = qs("#storiesHint");
 
   // Visual editor fields
@@ -704,8 +702,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (cStoriesH2) cStoriesH2.value = obj.stories_h2 || "Истории из практики";
     if (cStoriesInitial) cStoriesInitial.value = String(Number(obj.stories_initial_count || 6) || 6);
-    if (storiesH2) storiesH2.value = cStoriesH2?.value || "";
-    if (storiesInitialCount) storiesInitialCount.value = cStoriesInitial?.value || "6";
 
     if (cFormH2) cFormH2.value = obj.form_h2 || "";
     if (cFormLead) cFormLead.value = obj.form_lead || "";
@@ -729,8 +725,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const parentCards = resultParentItems.getValues();
     const diplomasItems = readDiplomasFromUi();
     const storiesFromSection = readStoriesItemsFromStoriesSection();
-    const storiesH2Val = String(storiesH2?.value ?? cStoriesH2?.value ?? "").trim();
-    const storiesInitialRaw = storiesInitialCount?.value ?? cStoriesInitial?.value ?? 6;
+    const storiesH2Val = String(cStoriesH2?.value ?? "").trim();
+    const storiesInitialRaw = cStoriesInitial?.value ?? 6;
     return {
       ...base,
       hero_pill: cHeroPill?.value || "",
@@ -1096,14 +1092,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const obj = getContentObj();
     if (!obj) return;
     ensureStoriesDefaults(obj);
-    const h2 = String(storiesH2?.value ?? cStoriesH2?.value ?? "").trim();
-    const initialRaw = storiesInitialCount?.value ?? cStoriesInitial?.value ?? 6;
+    const h2 = String(cStoriesH2?.value ?? "").trim();
+    const initialRaw = cStoriesInitial?.value ?? 6;
     obj.stories_h2 = h2 || obj.stories_h2 || "Истории из практики";
     obj.stories_initial_count = Math.max(1, Math.min(9, Number(initialRaw) || 6));
     const fromSection = readStoriesItemsFromStoriesSection();
     if (fromSection !== null) obj.stories_items = fromSection;
-    if (cStoriesH2 && storiesH2) cStoriesH2.value = storiesH2.value;
-    if (cStoriesInitial && storiesInitialCount) cStoriesInitial.value = storiesInitialCount.value;
     setContentObj(obj);
   }
 
@@ -1145,11 +1139,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     ensureStoriesDefaults(obj);
     setContentObj(obj);
 
-    if (storiesH2) storiesH2.value = obj.stories_h2 || "Истории из практики";
-    if (storiesInitialCount) storiesInitialCount.value = String(Math.max(1, Math.min(9, Number(obj.stories_initial_count || 6) || 6)));
+    if (cStoriesH2) cStoriesH2.value = obj.stories_h2 || "Истории из практики";
+    if (cStoriesInitial) cStoriesInitial.value = String(Math.max(1, Math.min(9, Number(obj.stories_initial_count || 6) || 6)));
 
     if (!storiesItems) return;
     storiesItems.innerHTML = "";
+    let draggingStoryRow = null;
 
     const items = Array.isArray(obj.stories_items) ? obj.stories_items : [];
     if (!items.length) {
@@ -1218,7 +1213,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         removeBtn,
       ]);
 
-      const row = el("div", { class: "admin-item" }, [
+      const body = el("div", { class: "admin-diploma-body" }, [
         headRow,
         img,
         el("div", { class: "admin-item__cols" }, [childAge, problem]),
@@ -1227,19 +1222,60 @@ document.addEventListener("DOMContentLoaded", async () => {
         rec,
       ]);
 
+      const grip = el("div", {
+        class: "admin-diploma-grip",
+        title: "Потяните, чтобы изменить порядок",
+        text: "⠿",
+        role: "button",
+        tabindex: "0",
+        "aria-grabbed": "false",
+      });
+      grip.setAttribute("draggable", "true");
+
+      const layout = el("div", { class: "admin-diploma-layout" }, [grip, body]);
+
+      const row = el("div", { class: "admin-item" }, [layout]);
+
       const syncBackToJson = () => {
         const obj2 = getContentObj();
         if (!obj2) return;
         ensureStoriesDefaults(obj2);
-        if (storiesH2) obj2.stories_h2 = String(storiesH2.value || "").trim();
-        if (storiesInitialCount) obj2.stories_initial_count = Math.max(1, Math.min(9, Number(storiesInitialCount.value || 6) || 6));
+        if (cStoriesH2) obj2.stories_h2 = String(cStoriesH2.value || "").trim();
+        if (cStoriesInitial) {
+          obj2.stories_initial_count = Math.max(1, Math.min(9, Number(cStoriesInitial.value || 6) || 6));
+        }
         const allRows = Array.from(storiesItems.querySelectorAll(".admin-item"));
         obj2.stories_items = allRows.map((r) => readStoryFromRow(r)).filter((v) => v.photo_url || v.parent_name || v.child_age || v.problem || v.text || v.recommendation);
         setContentObj(obj2);
-        if (cStoriesH2 && storiesH2) cStoriesH2.value = storiesH2.value;
-        if (cStoriesInitial && storiesInitialCount) cStoriesInitial.value = storiesInitialCount.value;
         setText(storiesHint, "Изменения внесены в JSON. Нажмите «Сохранить (визуально)» или «Сохранить (JSON)» в «Тексты сайта».");
       };
+
+      grip.addEventListener("dragstart", (e) => {
+        draggingStoryRow = row;
+        row.classList.add("admin-item--dragging");
+        grip.setAttribute("aria-grabbed", "true");
+        try {
+          e.dataTransfer.setData("text/plain", "story-reorder");
+          e.dataTransfer.effectAllowed = "move";
+        } catch {
+          /* ignore */
+        }
+      });
+      grip.addEventListener("dragend", () => {
+        draggingStoryRow = null;
+        row.classList.remove("admin-item--dragging");
+        grip.setAttribute("aria-grabbed", "false");
+        syncBackToJson();
+      });
+
+      row.addEventListener("dragover", (e) => {
+        if (!draggingStoryRow) return;
+        e.preventDefault();
+        if (draggingStoryRow === row) return;
+        const rect = row.getBoundingClientRect();
+        const before = e.clientY < rect.top + rect.height / 2;
+        storiesItems.insertBefore(draggingStoryRow, before ? row : row.nextSibling);
+      });
 
       row.addEventListener("input", () => syncBackToJson(), true);
       row.addEventListener("change", () => syncBackToJson(), true);
@@ -1274,17 +1310,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   storiesReloadBtn?.addEventListener("click", rebuildStoriesUiFromJson);
   addStoryBtn?.addEventListener("click", addStoryUi);
-  storiesH2?.addEventListener("input", () => syncStoriesFieldsToContentJson());
-  storiesInitialCount?.addEventListener("input", () => syncStoriesFieldsToContentJson());
-  storiesInitialCount?.addEventListener("change", () => syncStoriesFieldsToContentJson());
-  cStoriesH2?.addEventListener("input", () => {
-    if (storiesH2) storiesH2.value = cStoriesH2.value;
-    syncStoriesFieldsToContentJson();
-  });
-  cStoriesInitial?.addEventListener("input", () => {
-    if (storiesInitialCount) storiesInitialCount.value = String(cStoriesInitial.value || "6");
-    syncStoriesFieldsToContentJson();
-  });
+  cStoriesH2?.addEventListener("input", () => syncStoriesFieldsToContentJson());
+  cStoriesInitial?.addEventListener("input", () => syncStoriesFieldsToContentJson());
+  cStoriesInitial?.addEventListener("change", () => syncStoriesFieldsToContentJson());
 
   addDiplomaItemBtn?.addEventListener("click", addDiplomaUi);
   cDiplomasH2?.addEventListener("input", rebuildDiplomasUiFromJson);

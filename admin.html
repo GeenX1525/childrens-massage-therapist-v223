@@ -14,7 +14,7 @@
     />
 
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./admin.css?v=20260512-4" />
+    <link rel="stylesheet" href="./admin.css?v=20260514-2" />
   </head>
 
   <body>
@@ -75,6 +75,16 @@
         </section>
 
         <section class="admin__card">
+          <h2>Истории из практики</h2>
+          <p class="muted small">
+            Как у «Мои документы»: полный список историй и фото — в блоке <b>«Тексты сайта»</b> ниже, внутри раздела
+            <b>«Истории из практики»</b>. Порядок карточек на сайте меняется перетаскиванием за ручку
+            <b>⠿</b> слева от строки. Фото загружаются в Supabase Storage (<b>site-assets</b>), в JSON попадает публичная
+            ссылка. После правок нажмите <b>«Сохранить (визуально)»</b> или <b>«Сохранить (JSON)»</b> в «Тексты сайта».
+          </p>
+        </section>
+
+        <section class="admin__card admin__card--wide">
           <h2>Тексты сайта</h2>
           <p class="muted small">Редактируется структура всех секций. Сохраняется в Supabase и подтягивается на сайте при загрузке.</p>
           <div class="admin-row">
@@ -246,10 +256,25 @@
                 </details>
 
                 <details class="admin-details">
-                  <summary class="admin-details__summary">Истории из практики (параметры)</summary>
+                  <summary class="admin-details__summary">Истории из практики</summary>
                   <div class="admin-details__body">
                     <label class="field"><span class="field__label">Заголовок секции</span><input type="text" id="c_stories_h2" /></label>
                     <label class="field"><span class="field__label">Сколько показывать сначала (6–9)</span><input type="number" id="c_stories_initial" min="1" max="9" /></label>
+                    <p class="muted small">
+                      Загрузка фото с компьютера — в строке каждой истории (как у «Мои документы» в отдельной карточке выше).
+                      Путь <code>C:\…</code> из Проводника вставить нельзя; после загрузки должна быть ссылка <b>https…</b>.
+                    </p>
+                    <div class="admin-row">
+                      <button class="btn btn--secondary" type="button" id="storiesReloadBtn">Обновить из JSON</button>
+                    </div>
+                    <div class="admin-list">
+                      <div class="admin-list__head">
+                        <div class="muted small">Порядок на сайте: тяните за ручку ⠿ слева.</div>
+                        <button class="btn btn--secondary" type="button" id="addStoryBtn">Добавить историю</button>
+                      </div>
+                      <div class="admin-list__items" id="storiesItems"></div>
+                      <div class="muted small" id="storiesHint" aria-live="polite"></div>
+                    </div>
                   </div>
                 </details>
 
@@ -276,32 +301,6 @@
             </div>
           </details>
           <div class="muted small" id="contentHint" aria-live="polite"></div>
-        </section>
-
-        <section class="admin__card admin__card--wide">
-          <h2>Истории из практики</h2>
-          <p class="muted small">
-            Это визуальный редактор для поля <b>stories_items</b> в JSON. После изменений нажмите «Сохранить (визуально)» или «Сохранить (JSON)» в блоке «Тексты сайта».
-            Фото загружаются в Supabase Storage bucket <b>site-assets</b> и сохраняются как публичные ссылки.
-          </p>
-          <div class="admin-row">
-            <button class="btn btn--secondary" type="button" id="storiesReloadBtn">Обновить из JSON</button>
-            <button class="btn" type="button" id="addStoryBtn">Добавить историю</button>
-          </div>
-          <div class="admin-row">
-            <label class="field" style="margin:0; min-width: 260px;">
-              <span class="field__label">Заголовок секции</span>
-              <input type="text" id="storiesH2" />
-            </label>
-            <label class="field" style="margin:0; min-width: 260px;">
-              <span class="field__label">Показывать сначала (6–9)</span>
-              <input type="number" id="storiesInitialCount" min="1" max="9" />
-            </label>
-          </div>
-          <div class="admin-list">
-            <div class="admin-list__items" id="storiesItems"></div>
-          </div>
-          <div class="muted small" id="storiesHint" aria-live="polite"></div>
         </section>
 
         <section class="admin__card">
@@ -362,7 +361,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-config.js?v=20260508-1"></script>
-    <script src="./admin.js?v=20260513-1"></script>
+    <script src="./admin.js?v=20260514-2"></script>
   </body>
 </html>
 
