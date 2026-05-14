@@ -890,8 +890,17 @@ html[data-theme="dark"] .footer {
   transform: translateY(0);
 }
 
-/* Dialog */
-.dialog {
+/* Dialog
+   Нельзя задавать display:flex просто на .dialog: это перебивает UA-стиль
+   dialog:not([open]) { display:none } — закрытые <dialog> остаются на экране. */
+dialog.dialog:not([open]) {
+  display: none;
+}
+
+dialog.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  margin: auto;
   width: min(820px, calc(100vw - 28px));
   max-height: min(90dvh, calc(100vh - 24px));
   border-radius: var(--radius-lg);
@@ -899,12 +908,9 @@ html[data-theme="dark"] .footer {
   padding: 0;
   overflow: hidden;
   box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  margin: auto;
 }
 
-.dialog::backdrop {
+dialog.dialog::backdrop {
   background: rgba(0, 0, 0, 0.35);
 }
 
