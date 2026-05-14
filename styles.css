@@ -183,26 +183,30 @@ html[data-theme="dark"] .header {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 0;
+  padding: clamp(12px, 2.2vw, 22px) 0;
+  min-height: 0;
 }
 
 .brand {
   display: grid;
-  grid-template-columns: 16px auto;
-  column-gap: 10px;
-  row-gap: 2px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 4px;
   align-items: center;
   text-decoration: none;
   color: inherit;
+  min-width: 0;
 }
 
 .brand__dot {
-  width: 14px;
-  height: 14px;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), transparent 40%),
     linear-gradient(135deg, var(--accent) 0%, var(--sage) 100%);
-  box-shadow: 0 16px 34px rgba(194, 132, 102, 0.24);
+  box-shadow: 0 12px 28px rgba(194, 132, 102, 0.28);
 }
 
 .brand__text {
@@ -210,13 +214,19 @@ html[data-theme="dark"] .header {
   color: var(--title);
   letter-spacing: 0.2px;
   font-family: var(--font-display);
+  /* было ~16px по умолчанию — ×2, с ограничением на узких экранах */
+  font-size: clamp(18px, 4.6vw, 32px);
+  line-height: 1.12;
+  min-width: 0;
 }
 
 .brand__sub {
   grid-column: 2;
-  font-size: 12px;
+  font-size: clamp(14px, 3.2vw, 24px);
+  line-height: 1.2;
   color: var(--muted);
-  margin-top: -4px;
+  margin-top: 0;
+  min-width: 0;
 }
 
 .nav {
@@ -1011,6 +1021,17 @@ html[data-theme="dark"] .dialog__actions {
 }
 
 @media (max-width: 560px) {
+  .header__inner {
+    gap: 10px;
+  }
+  .brand {
+    grid-template-columns: 24px minmax(0, 1fr);
+    column-gap: 10px;
+  }
+  .brand__dot {
+    width: 24px;
+    height: 24px;
+  }
   .nav {
     gap: 8px;
   }
