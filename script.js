@@ -276,8 +276,16 @@ function applySiteContent(content) {
     const cleaned = values
       .filter((v) => v && typeof v === "object")
       .map((s) => ({
-        photo_url: isNonEmptyString(s.photo_url) ? s.photo_url.trim() : "",
-        parent_name: isNonEmptyString(s.parent_name) ? s.parent_name.trim() : "",
+        photo_url: isNonEmptyString(s.photo_url)
+          ? s.photo_url.trim()
+          : isNonEmptyString(s.photo)
+            ? String(s.photo).trim()
+            : "",
+        parent_name: isNonEmptyString(s.parent_name)
+          ? s.parent_name.trim()
+          : isNonEmptyString(s.name)
+            ? String(s.name).trim()
+            : "",
         child_age: isNonEmptyString(s.child_age) ? s.child_age.trim() : "",
         problem: isNonEmptyString(s.problem) ? s.problem.trim() : "",
         text: isNonEmptyString(s.text) ? s.text.trim() : "",

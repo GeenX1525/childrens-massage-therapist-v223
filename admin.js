@@ -412,6 +412,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     contentJson.value = prettyJson(obj);
     setText(contentHint, "Загружено.");
     loadContentUiFromJson();
+    // Список историй живёт в отдельном DOM — пересобрать из актуального JSON (и после «Загрузить из базы»).
+    rebuildStoriesUiFromJson();
   }
 
   async function upsertContentJson(obj) {
@@ -1089,6 +1091,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     return obj;
   }
 
+  /** Обновить в JSON заголовок/лимит и строки историй из полей секции (без полной пересборки DOM). */
+  function syncStoriesFieldsToContentJson() {
+    const obj = getContentObj();
+    if (!obj) return;
+    ensureStoriesDefaults(obj);
+    const h2 = String(storiesH2?.value ?? cStoriesH2?.value ?? "").trim();
+    const initialRaw = storiesInitialCount?.value ?? cStoriesInitial?.value ?? 6;
+    obj.stories_h2 = h2 || obj.stories_h2 || "Истории из практики";
+    obj.stories_initial_count = Math.max(1, Math.min(9, Number(initialRaw) || 6));
+    const fromSection = readStoriesItemsFromStoriesSection();
+    if (fromSection !== null) obj.stories_items = fromSection;
+    if (cStoriesH2 && storiesH2) cStoriesH2.value = storiesH2.value;
+    if (cStoriesInitial && storiesInitialCount) cStoriesInitial.value = storiesInitialCount.value;
+    setContentObj(obj);
+  }
+
   function readStoryFromRow(row) {
     const get = (sel) => String(row.querySelector(sel)?.value ?? "").trim();
     return {
@@ -1140,7 +1158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     items.forEach((s, idx) => {
       const photo = el("input", { type: "text", "data-field": "photo_url", placeholder: "Ссылка на фото" });
-      photo.value = String(s?.photo_url || "");
+      photo.value = String(s?.photo_url || s?.photo || "").trim();
 
       const img = el("img", { class: "admin-preview", alt: "Фото истории" });
       const syncPreview = () => {
@@ -1184,7 +1202,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       const parentName = el("input", { type: "text", "data-field": "parent_name", placeholder: "Имя/инициалы (например: Анна, мама Миши)" });
-      parentName.value = String(s?.parent_name || "");
+      parentName.value = String(s?.parent_name || s?.name || "").trim();
       const childAge = el("input", { type: "text", "data-field": "child_age", placeholder: "Возраст ребёнка (например: 4 месяца)" });
       childAge.value = String(s?.child_age || "");
       const problem = el("input", { type: "text", "data-field": "problem", placeholder: "Запрос/проблема (1 строка)" });
@@ -1256,8 +1274,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   storiesReloadBtn?.addEventListener("click", rebuildStoriesUiFromJson);
   addStoryBtn?.addEventListener("click", addStoryUi);
-  storiesH2?.addEventListener("input", rebuildStoriesUiFromJson);
-  storiesInitialCount?.addEventListener("change", rebuildStoriesUiFromJson);
+  storiesH2?.addEventListener("input", () => syncStoriesFieldsToContentJson());
+  storiesInitialCount?.addEventListener("input", () => syncStoriesFieldsToContentJson());
+  storiesInitialCount?.addEventListener("change", () => syncStoriesFieldsToContentJson());
+  cStoriesH2?.addEventListener("input", () => {
+    if (storiesH2) storiesH2.value = cStoriesH2.value;
+    syncStoriesFieldsToContentJson();
+  });
+  cStoriesInitial?.addEventListener("input", () => {
+    if (storiesInitialCount) storiesInitialCount.value = String(cStoriesInitial.value || "6");
+    syncStoriesFieldsToContentJson();
+  });
 
   addDiplomaItemBtn?.addEventListener("click", addDiplomaUi);
   cDiplomasH2?.addEventListener("input", rebuildDiplomasUiFromJson);
@@ -1375,8 +1402,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (ok) {
     mountDiplomasQuickZone();
     await Promise.all([loadContent(), loadLegal(), loadLeads()]);
-    rebuildStoriesUiFromJson();
-    loadContentUiFromJson();
   }
 });
 
