@@ -77,11 +77,14 @@
         <section class="admin__card">
           <h2>Истории из практики</h2>
           <p class="muted small">
-            Как у «Мои документы»: полный список историй и фото — в блоке <b>«Тексты сайта»</b> ниже, внутри раздела
-            <b>«Истории из практики»</b>. Порядок карточек на сайте меняется перетаскиванием за ручку
-            <b>⠿</b> слева от строки. Фото загружаются в Supabase Storage (<b>site-assets</b>), в JSON попадает публичная
-            ссылка. После правок нажмите <b>«Сохранить (визуально)»</b> или <b>«Сохранить (JSON)»</b> в «Тексты сайта».
+            Рекомендации: <b>JPG/PNG/WebP/GIF/BMP/SVG</b>, до <b>5 МБ</b> за файл. Загрузка в
+            <b>Supabase Storage</b> (bucket <b>site-assets</b>), затем фото добавляется <b>в начало</b> списка на сайте. Можно перетащить файл в строку ниже или выбрать кнопкой «Выберите файл».
           </p>
+          <div class="admin-row admin-row--diploma-quick" id="storiesQuickRow">
+            <input type="file" id="storiesQuickFile" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/svg+xml,.svg" />
+            <button class="btn" type="button" id="uploadStoryQuickBtn">Загрузить</button>
+          </div>
+          <div class="muted small" id="storiesQuickHint" aria-live="polite"></div>
         </section>
 
         <section class="admin__card admin__card--wide">
@@ -258,19 +261,17 @@
                 <details class="admin-details">
                   <summary class="admin-details__summary">Истории из практики</summary>
                   <div class="admin-details__body">
-                    <label class="field"><span class="field__label">Заголовок секции</span><input type="text" id="c_stories_h2" /></label>
-                    <label class="field"><span class="field__label">Сколько показывать сначала (6–9)</span><input type="number" id="c_stories_initial" min="1" max="9" /></label>
+                    <label class="field">
+                      <span class="field__label">Заголовок секции</span>
+                      <input type="text" id="c_stories_h2" />
+                    </label>
                     <p class="muted small">
-                      Загрузка фото с компьютера — в строке каждой истории (как у «Мои документы» в отдельной карточке выше).
-                      Путь <code>C:\…</code> из Проводника вставить нельзя; после загрузки должна быть ссылка <b>https…</b>.
+                      Загрузка фото с компьютера — в отдельной карточке <b>«Истории из практики»</b> над блоком «Тексты сайта» (как у «Мои документы»). Здесь: заголовок секции, порядок и ссылки. Путь <code>C:\…</code> из Проводника вставить нельзя; для уже размещённого файла укажите <b>https…</b> в поле ссылки.
                     </p>
-                    <div class="admin-row">
-                      <button class="btn btn--secondary" type="button" id="storiesReloadBtn">Обновить из JSON</button>
-                    </div>
                     <div class="admin-list">
                       <div class="admin-list__head">
-                        <div class="muted small">Порядок на сайте: тяните за ручку ⠿ слева.</div>
-                        <button class="btn btn--secondary" type="button" id="addStoryBtn">Добавить историю</button>
+                        <div class="muted small">Порядок на сайте: тяните за ручку ⠿ слева. Свежие фото — слева вверху в сетке 3×3.</div>
+                        <button class="btn btn--secondary" type="button" id="addStoryBtn">Пустая строка (только ссылка)</button>
                       </div>
                       <div class="admin-list__items" id="storiesItems"></div>
                       <div class="muted small" id="storiesHint" aria-live="polite"></div>

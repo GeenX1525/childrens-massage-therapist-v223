@@ -28,6 +28,18 @@ function diplomaKindFromFile(file) {
   return "image";
 }
 
+const STORY_MAX_BYTES = 5 * 1024 * 1024;
+const STORY_ACCEPT_ATTR = "image/jpeg,image/png,image/webp,image/gif,image/bmp,image/svg+xml,.svg";
+const STORY_EXT_OK = new Set(["jpg", "jpeg", "png", "webp", "gif", "bmp", "svg"]);
+
+function isAllowedStoryFile(file) {
+  if (!file || !file.name) return false;
+  const ext = fileExt(file.name);
+  if (ext && STORY_EXT_OK.has(ext)) return true;
+  const mt = String(file.type || "").toLowerCase();
+  return mt.startsWith("image/");
+}
+
 function qs(sel, root = document) {
   return root.querySelector(sel);
 }
@@ -278,6 +290,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const uploadDiplomaQuickBtn = qs("#uploadDiplomaQuickBtn");
   const diplomasQuickHint = qs("#diplomasQuickHint");
 
+  const storiesQuickRow = qs("#storiesQuickRow");
+  const storiesQuickFile = qs("#storiesQuickFile");
+  const uploadStoryQuickBtn = qs("#uploadStoryQuickBtn");
+  const storiesQuickHint = qs("#storiesQuickHint");
+
   const reloadContentBtn = qs("#reloadContentBtn");
   const pullFromSiteBtn = qs("#pullFromSiteBtn");
   const saveContentBtn = qs("#saveContentBtn");
@@ -286,7 +303,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const contentJson = qs("#contentJson");
   const contentHint = qs("#contentHint");
 
-  const storiesReloadBtn = qs("#storiesReloadBtn");
   const addStoryBtn = qs("#addStoryBtn");
   const storiesItems = qs("#storiesItems");
   const storiesHint = qs("#storiesHint");
@@ -304,7 +320,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const cResultParentH3 = qs("#c_result_parent_h3");
   const cDiplomasH2 = qs("#c_diplomas_h2");
   const cStoriesH2 = qs("#c_stories_h2");
-  const cStoriesInitial = qs("#c_stories_initial");
   const cFormH2 = qs("#c_form_h2");
   const cFormLead = qs("#c_form_lead");
   const cFormGeo = qs("#c_form_geo");
@@ -661,6 +676,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await refreshSessionUi();
     await Promise.all([loadContent(), loadLegal(), loadLeads()]);
     mountDiplomasQuickZone();
+    mountStoriesQuickZone();
   });
 
   logoutBtn?.addEventListener("click", async () => {
@@ -701,7 +717,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     rebuildDiplomasUiFromJson();
 
     if (cStoriesH2) cStoriesH2.value = obj.stories_h2 || "Истории из практики";
-    if (cStoriesInitial) cStoriesInitial.value = String(Number(obj.stories_initial_count || 6) || 6);
+    rebuildStoriesUiFromJson();
 
     if (cFormH2) cFormH2.value = obj.form_h2 || "";
     if (cFormLead) cFormLead.value = obj.form_lead || "";
@@ -715,8 +731,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!storiesItems) return null;
     const allRows = Array.from(storiesItems.querySelectorAll(".admin-item"));
     return allRows
-      .map((r) => readStoryFromRow(r))
-      .filter((v) => v.photo_url || v.parent_name || v.child_age || v.problem || v.text || v.recommendation);
+      .map((row) => {
+        const photo_url = String(row.querySelector('[data-field="photo_url"]')?.value || "").trim();
+        return photo_url ? { photo_url } : null;
+      })
+      .filter(Boolean);
   }
 
   function buildContentFromFields() {
@@ -726,7 +745,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const diplomasItems = readDiplomasFromUi();
     const storiesFromSection = readStoriesItemsFromStoriesSection();
     const storiesH2Val = String(cStoriesH2?.value ?? "").trim();
-    const storiesInitialRaw = cStoriesInitial?.value ?? 6;
     return {
       ...base,
       hero_pill: cHeroPill?.value || "",
@@ -757,8 +775,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       diplomas_h2: cDiplomasH2?.value || "Мои документы",
       diplomas_items: diplomasItems,
 
-      stories_h2: storiesH2Val,
-      stories_initial_count: Math.max(1, Math.min(9, Number(storiesInitialRaw) || 6)),
+      stories_h2: storiesH2Val || "Истории из практики",
       ...(storiesFromSection !== null ? { stories_items: storiesFromSection } : {}),
 
       form_h2: cFormH2?.value || "",
@@ -1082,39 +1099,52 @@ document.addEventListener("DOMContentLoaded", async () => {
   function ensureStoriesDefaults(obj) {
     if (!obj || typeof obj !== "object") return obj;
     if (typeof obj.stories_h2 !== "string") obj.stories_h2 = "Истории из практики";
-    if (typeof obj.stories_initial_count !== "number") obj.stories_initial_count = 6;
     if (!Array.isArray(obj.stories_items)) obj.stories_items = [];
     return obj;
   }
 
-  /** Обновить в JSON заголовок/лимит и строки историй из полей секции (без полной пересборки DOM). */
-  function syncStoriesFieldsToContentJson() {
-    const obj = getContentObj();
-    if (!obj) return;
-    ensureStoriesDefaults(obj);
-    const h2 = String(cStoriesH2?.value ?? "").trim();
-    const initialRaw = cStoriesInitial?.value ?? 6;
-    obj.stories_h2 = h2 || obj.stories_h2 || "Истории из практики";
-    obj.stories_initial_count = Math.max(1, Math.min(9, Number(initialRaw) || 6));
-    const fromSection = readStoriesItemsFromStoriesSection();
-    if (fromSection !== null) obj.stories_items = fromSection;
-    setContentObj(obj);
+  function normalizeStoryItem(v) {
+    if (typeof v === "string") {
+      const photo_url = v.trim();
+      return photo_url ? { photo_url } : null;
+    }
+    if (v && typeof v === "object") {
+      const photo_url = String(v.photo_url || v.photo || v.url || "").trim();
+      return photo_url ? { photo_url } : null;
+    }
+    return null;
   }
 
-  function readStoryFromRow(row) {
-    const get = (sel) => String(row.querySelector(sel)?.value ?? "").trim();
-    return {
-      photo_url: get('[data-field="photo_url"]'),
-      parent_name: get('[data-field="parent_name"]'),
-      child_age: get('[data-field="child_age"]'),
-      problem: get('[data-field="problem"]'),
-      text: get('[data-field="text"]'),
-      recommendation: get('[data-field="recommendation"]'),
-    };
+  function syncStoriesJsonFromDom() {
+    const obj2 = getContentObj();
+    if (!obj2) return;
+    ensureStoriesDefaults(obj2);
+    if (cStoriesH2) obj2.stories_h2 = String(cStoriesH2.value || "").trim() || "Истории из практики";
+    obj2.stories_items = readStoriesItemsFromStoriesSection() || [];
+    setContentObj(obj2);
+    if (storiesHint) {
+      setText(
+        storiesHint,
+        "Изменения внесены в JSON. Нажмите «Сохранить (визуально)» или «Сохранить (JSON)» в блоке «Тексты сайта»."
+      );
+    }
   }
 
-  async function uploadStoryPhoto(file) {
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  let storiesDomSyncAttached = false;
+  function attachStoriesDomSyncOnce() {
+    if (storiesDomSyncAttached || !storiesItems) return;
+    storiesDomSyncAttached = true;
+    storiesItems.addEventListener("input", () => syncStoriesJsonFromDom(), true);
+    storiesItems.addEventListener("change", () => syncStoriesJsonFromDom(), true);
+  }
+
+  async function uploadStoryFile(file) {
+    if (!file) throw new Error("Файл не выбран");
+    if (!isAllowedStoryFile(file)) {
+      throw new Error("Неподдерживаемый формат. Допустимы изображения (JPG, PNG, WebP, GIF, BMP, SVG).");
+    }
+    if (file.size > STORY_MAX_BYTES) throw new Error("Файл больше 5 МБ. Уменьшите размер.");
+    const ext = fileExt(file.name) || "jpg";
     const rand = Math.random().toString(16).slice(2);
     const path = `stories/${Date.now()}-${rand}.${ext}`;
     const { error: upErr } = await sb.storage.from(getStorageBucketId()).upload(path, file, {
@@ -1126,100 +1156,109 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: pub } = sb.storage.from(getStorageBucketId()).getPublicUrl(path);
     const url = pub?.publicUrl;
     if (!url) throw new Error("Не получили публичную ссылку на фото");
-    return url;
+    return { photo_url: url };
+  }
+
+  let storiesQuickZoneMounted = false;
+
+  async function runStoryQuickUpload(file) {
+    setText(storiesQuickHint, "");
+    if (!file) {
+      setText(storiesQuickHint, "Выберите файл.");
+      return;
+    }
+    const { data: authSess } = await sb.auth.getSession();
+    if (!authSess?.session) {
+      setText(storiesQuickHint, "Сначала войдите в админку (форма «Вход» выше). Без входа загрузка в Storage недоступна.");
+      return;
+    }
+    try {
+      const out = await uploadStoryFile(file);
+      const parsed = safeJsonParse(contentJson.value || "{}");
+      const obj = parsed.ok && parsed.value && typeof parsed.value === "object" ? parsed.value : {};
+      ensureStoriesDefaults(obj);
+      obj.stories_items.unshift(out);
+      setContentObj(obj);
+      rebuildStoriesUiFromJson();
+      await saveContent();
+      if (storiesQuickFile) storiesQuickFile.value = "";
+      setText(storiesQuickHint, "Загружено и сохранено в Supabase. Фото стоит первым в списке.");
+    } catch (e) {
+      setText(storiesQuickHint, `Ошибка: ${e?.message || "не удалось"}${storageErrorHint(e?.message)}`);
+    }
+  }
+
+  function mountStoriesQuickZone() {
+    if (storiesQuickZoneMounted || !storiesQuickRow) return;
+    storiesQuickZoneMounted = true;
+    if (storiesQuickFile) storiesQuickFile.setAttribute("accept", STORY_ACCEPT_ATTR);
+
+    storiesQuickRow.addEventListener("dragover", (e) => {
+      if (!e.dataTransfer?.types?.includes("Files")) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      storiesQuickRow.classList.add("admin-row--drop");
+    });
+    storiesQuickRow.addEventListener("dragleave", (e) => {
+      if (!storiesQuickRow.contains(e.relatedTarget)) storiesQuickRow.classList.remove("admin-row--drop");
+    });
+    storiesQuickRow.addEventListener("drop", async (e) => {
+      if (!e.dataTransfer?.types?.includes("Files")) return;
+      e.preventDefault();
+      storiesQuickRow.classList.remove("admin-row--drop");
+      const f = e.dataTransfer?.files?.[0];
+      if (f) await runStoryQuickUpload(f);
+    });
   }
 
   function rebuildStoriesUiFromJson() {
-    setText(storiesHint, "");
+    if (!storiesItems) return;
+    if (storiesHint) setText(storiesHint, "");
     const obj = getContentObj();
     if (!obj) {
-      setText(storiesHint, "JSON невалидный. Сначала исправьте JSON в «Тексты сайта».");
+      if (storiesHint) setText(storiesHint, "JSON невалидный. Сначала исправьте JSON в «Тексты сайта».");
+      storiesItems.innerHTML = "";
       return;
     }
     ensureStoriesDefaults(obj);
+    if (cStoriesH2) obj.stories_h2 = String(cStoriesH2.value || obj.stories_h2 || "Истории из практики").trim();
+    const items = (Array.isArray(obj.stories_items) ? obj.stories_items : []).map(
+      (v) => normalizeStoryItem(v) || { photo_url: "" }
+    );
+    obj.stories_items = items;
     setContentObj(obj);
 
-    if (cStoriesH2) cStoriesH2.value = obj.stories_h2 || "Истории из практики";
-    if (cStoriesInitial) cStoriesInitial.value = String(Math.max(1, Math.min(9, Number(obj.stories_initial_count || 6) || 6)));
-
-    if (!storiesItems) return;
     storiesItems.innerHTML = "";
-    let draggingStoryRow = null;
-
-    const items = Array.isArray(obj.stories_items) ? obj.stories_items : [];
-    if (!items.length) {
-      setText(storiesHint, "Историй пока нет. Нажмите «Добавить историю».");
-    }
+    let draggingEl = null;
 
     items.forEach((s, idx) => {
-      const photo = el("input", { type: "text", "data-field": "photo_url", placeholder: "Ссылка на фото" });
-      photo.value = String(s?.photo_url || s?.photo || "").trim();
+      const url = el("input", {
+        type: "text",
+        "data-field": "photo_url",
+        placeholder: "Публичная ссылка https… (если файл уже где-то размещён)",
+      });
+      url.value = s.photo_url;
 
-      const img = el("img", { class: "admin-preview", alt: "Фото истории" });
+      const preview = el("div", { class: "admin-preview-wrap" });
+      const img = el("img", { class: "admin-preview", alt: "Превью" });
+      preview.appendChild(img);
+
       const syncPreview = () => {
-        const url = String(photo.value || "").trim();
-        if (!url) {
+        const u = String(url.value || "").trim();
+        if (!u) {
           img.style.display = "none";
           img.removeAttribute("src");
           return;
         }
-        img.src = url;
+        img.src = u;
         img.style.display = "block";
       };
-      syncPreview();
-      photo.addEventListener("input", syncPreview);
-
-      const file = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp" });
-      const uploadBtn = el("button", { type: "button", class: "btn btn--secondary", text: "Загрузить фото" });
-      const uploadHint = el("div", { class: "muted small", text: "" });
-
-      uploadBtn.addEventListener("click", async () => {
-        const f = file.files?.[0];
-        if (!f) {
-          uploadHint.textContent = "Выберите файл.";
-          return;
-        }
-        uploadHint.textContent = "Загружаю…";
-        uploadBtn.disabled = true;
-        try {
-          const url = await uploadStoryPhoto(f);
-          photo.value = url;
-          syncPreview();
-          uploadHint.textContent = "Готово. Нажмите «Сохранить (визуально)» или «Сохранить (JSON)» в блоке «Тексты сайта».";
-        } catch (e) {
-          uploadHint.textContent = `Ошибка: ${e?.message || "не удалось"}${storageErrorHint(e?.message)}`;
-        } finally {
-          uploadBtn.disabled = false;
-        }
-      });
-      file.addEventListener("change", () => {
-        if (file.files?.[0]) uploadBtn.click();
-      });
-
-      const parentName = el("input", { type: "text", "data-field": "parent_name", placeholder: "Имя/инициалы (например: Анна, мама Миши)" });
-      parentName.value = String(s?.parent_name || s?.name || "").trim();
-      const childAge = el("input", { type: "text", "data-field": "child_age", placeholder: "Возраст ребёнка (например: 4 месяца)" });
-      childAge.value = String(s?.child_age || "");
-      const problem = el("input", { type: "text", "data-field": "problem", placeholder: "Запрос/проблема (1 строка)" });
-      problem.value = String(s?.problem || "");
-      const text = el("textarea", { class: "admin-text", "data-field": "text", placeholder: "Текст отзыва/истории" });
-      text.value = String(s?.text || "");
-      const rec = el("input", { type: "text", "data-field": "recommendation", placeholder: "Рекомендация/результат (коротко)" });
-      rec.value = String(s?.recommendation || "");
 
       const removeBtn = el("button", { type: "button", class: "btn btn--secondary admin-item__remove", text: "Удалить" });
-      const headRow = el("div", { class: "admin-item__row" }, [
-        el("div", {}, [el("div", { class: "muted small", text: `История #${idx + 1}` }), parentName]),
-        removeBtn,
-      ]);
 
-      const body = el("div", { class: "admin-diploma-body" }, [
-        headRow,
-        img,
-        el("div", { class: "admin-item__cols" }, [childAge, problem]),
-        el("div", { class: "admin-item__cols" }, [photo, el("div", {}, [file, uploadBtn, uploadHint])]),
-        text,
-        rec,
+      const headRow = el("div", { class: "admin-item__row" }, [
+        el("div", {}, [el("div", { class: "muted small", text: `Фото #${idx + 1}` })]),
+        removeBtn,
       ]);
 
       const grip = el("div", {
@@ -1232,26 +1271,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
       grip.setAttribute("draggable", "true");
 
+      const body = el("div", { class: "admin-diploma-body" }, [headRow, preview, url]);
       const layout = el("div", { class: "admin-diploma-layout" }, [grip, body]);
-
       const row = el("div", { class: "admin-item" }, [layout]);
 
-      const syncBackToJson = () => {
-        const obj2 = getContentObj();
-        if (!obj2) return;
-        ensureStoriesDefaults(obj2);
-        if (cStoriesH2) obj2.stories_h2 = String(cStoriesH2.value || "").trim();
-        if (cStoriesInitial) {
-          obj2.stories_initial_count = Math.max(1, Math.min(9, Number(cStoriesInitial.value || 6) || 6));
-        }
-        const allRows = Array.from(storiesItems.querySelectorAll(".admin-item"));
-        obj2.stories_items = allRows.map((r) => readStoryFromRow(r)).filter((v) => v.photo_url || v.parent_name || v.child_age || v.problem || v.text || v.recommendation);
-        setContentObj(obj2);
-        setText(storiesHint, "Изменения внесены в JSON. Нажмите «Сохранить (визуально)» или «Сохранить (JSON)» в «Тексты сайта».");
-      };
-
       grip.addEventListener("dragstart", (e) => {
-        draggingStoryRow = row;
+        draggingEl = row;
         row.classList.add("admin-item--dragging");
         grip.setAttribute("aria-grabbed", "true");
         try {
@@ -1262,57 +1287,57 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       });
       grip.addEventListener("dragend", () => {
-        draggingStoryRow = null;
+        draggingEl = null;
         row.classList.remove("admin-item--dragging");
         grip.setAttribute("aria-grabbed", "false");
-        syncBackToJson();
+        syncStoriesJsonFromDom();
       });
 
       row.addEventListener("dragover", (e) => {
-        if (!draggingStoryRow) return;
+        if (!draggingEl) return;
         e.preventDefault();
-        if (draggingStoryRow === row) return;
+        if (draggingEl === row) return;
         const rect = row.getBoundingClientRect();
         const before = e.clientY < rect.top + rect.height / 2;
-        storiesItems.insertBefore(draggingStoryRow, before ? row : row.nextSibling);
+        storiesItems.insertBefore(draggingEl, before ? row : row.nextSibling);
       });
 
-      row.addEventListener("input", () => syncBackToJson(), true);
-      row.addEventListener("change", () => syncBackToJson(), true);
+      url.addEventListener("input", () => {
+        syncPreview();
+        syncStoriesJsonFromDom();
+      });
 
       removeBtn.addEventListener("click", () => {
         row.remove();
-        syncBackToJson();
+        syncStoriesJsonFromDom();
       });
 
       storiesItems.appendChild(row);
+      syncPreview();
     });
+
+    if (!items.length && storiesHint) {
+      setText(storiesHint, "Пока фото нет — загрузите в карточке «Истории из практики» выше (как у «Мои документы»).");
+    }
+
+    attachStoriesDomSyncOnce();
   }
 
   function addStoryUi() {
     const obj = getContentObj();
     if (!obj) {
-      setText(storiesHint, "JSON невалидный. Сначала исправьте JSON в «Тексты сайта».");
+      if (storiesHint) setText(storiesHint, "JSON невалидный. Сначала исправьте JSON в «Тексты сайта».");
       return;
     }
     ensureStoriesDefaults(obj);
-    obj.stories_items.unshift({
-      photo_url: "",
-      parent_name: "",
-      child_age: "",
-      problem: "",
-      text: "",
-      recommendation: "",
-    });
+    obj.stories_items.unshift({ photo_url: "" });
     setContentObj(obj);
     rebuildStoriesUiFromJson();
+    if (storiesHint) setText(storiesHint, "Добавлена пустая строка — вставьте ссылку или загрузите файл в карточке выше.");
   }
 
-  storiesReloadBtn?.addEventListener("click", rebuildStoriesUiFromJson);
   addStoryBtn?.addEventListener("click", addStoryUi);
-  cStoriesH2?.addEventListener("input", () => syncStoriesFieldsToContentJson());
-  cStoriesInitial?.addEventListener("input", () => syncStoriesFieldsToContentJson());
-  cStoriesInitial?.addEventListener("change", () => syncStoriesFieldsToContentJson());
+  cStoriesH2?.addEventListener("input", rebuildStoriesUiFromJson);
 
   addDiplomaItemBtn?.addEventListener("click", addDiplomaUi);
   cDiplomasH2?.addEventListener("input", rebuildDiplomasUiFromJson);
@@ -1423,12 +1448,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   uploadHeroBtn?.addEventListener("click", uploadHero);
   uploadDiplomaQuickBtn?.addEventListener("click", uploadDiplomaQuick);
+  uploadStoryQuickBtn?.addEventListener("click", () => runStoryQuickUpload(storiesQuickFile?.files?.[0]));
 
   reloadLeadsBtn?.addEventListener("click", loadLeads);
 
   const ok = await refreshSessionUi();
   if (ok) {
     mountDiplomasQuickZone();
+    mountStoriesQuickZone();
     await Promise.all([loadContent(), loadLegal(), loadLeads()]);
   }
 });

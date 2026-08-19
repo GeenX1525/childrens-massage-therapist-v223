@@ -263,105 +263,79 @@ function applySiteContent(content) {
     });
   }
 
-  function renderStories(values, initialCount = 6) {
+  function storyPhotoUrl(v) {
+    if (typeof v === "string") return v.trim();
+    if (v && typeof v === "object") {
+      if (isNonEmptyString(v.photo_url)) return v.photo_url.trim();
+      if (isNonEmptyString(v.photo)) return String(v.photo).trim();
+      if (isNonEmptyString(v.url)) return v.url.trim();
+    }
+    return "";
+  }
+
+  function renderStories(values) {
+    const section = qs("#stories");
     const grid = qs("#storiesGrid");
     const moreBtn = qs("#storiesMore");
-    if (!grid || !moreBtn) return;
+    if (!section || !grid) return;
+
+    const pageSize = 9;
+
     if (!Array.isArray(values) || !values.length) {
       grid.innerHTML = "";
-      moreBtn.hidden = true;
+      if (moreBtn) moreBtn.hidden = true;
+      section.hidden = true;
       return;
     }
 
-    const cleaned = values
-      .filter((v) => v && typeof v === "object")
-      .map((s) => ({
-        photo_url: isNonEmptyString(s.photo_url)
-          ? s.photo_url.trim()
-          : isNonEmptyString(s.photo)
-            ? String(s.photo).trim()
-            : "",
-        parent_name: isNonEmptyString(s.parent_name)
-          ? s.parent_name.trim()
-          : isNonEmptyString(s.name)
-            ? String(s.name).trim()
-            : "",
-        child_age: isNonEmptyString(s.child_age) ? s.child_age.trim() : "",
-        problem: isNonEmptyString(s.problem) ? s.problem.trim() : "",
-        text: isNonEmptyString(s.text) ? s.text.trim() : "",
-        recommendation: isNonEmptyString(s.recommendation) ? s.recommendation.trim() : "",
-      }))
-      .filter((s) => s.photo_url || s.parent_name || s.child_age || s.problem || s.text || s.recommendation);
+    const cleaned = values.map(storyPhotoUrl).filter(Boolean);
 
-    let shown = Math.min(initialCount, cleaned.length);
+    if (!cleaned.length) {
+      grid.innerHTML = "";
+      if (moreBtn) moreBtn.hidden = true;
+      section.hidden = true;
+      return;
+    }
+
+    section.hidden = false;
+    let shown = Math.min(pageSize, cleaned.length);
 
     function draw() {
       grid.innerHTML = "";
-      cleaned.slice(0, shown).forEach((s) => {
-        const card = document.createElement("article");
-        card.className = "story-card";
+      cleaned.slice(0, shown).forEach((url, idx) => {
+        const wrap = document.createElement("div");
+        wrap.className = "story-tile";
 
-        const media = document.createElement("div");
-        media.className = "story-card__media";
-        if (s.photo_url) {
-          const img = document.createElement("img");
-          img.src = s.photo_url;
-          img.alt = s.parent_name ? `Фото: ${s.parent_name}` : "Фото";
-          img.loading = "lazy";
-          media.appendChild(img);
-        }
+        const btn = document.createElement("button");
+        btn.className = "diploma-btn";
+        btn.type = "button";
+        btn.setAttribute("data-media-url", url);
+        btn.setAttribute("data-media-kind", "image");
+        btn.setAttribute("data-media-title", "Фото из практики");
+        btn.setAttribute("aria-label", `Открыть фото #${idx + 1}`);
 
-        const body = document.createElement("div");
-        body.className = "story-card__body";
+        const thumb = document.createElement("div");
+        thumb.className = "diploma-thumb";
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "История из практики";
+        img.loading = "lazy";
+        thumb.appendChild(img);
 
-        const meta = document.createElement("div");
-        meta.className = "story-card__meta";
-        if (s.parent_name) {
-          const who = document.createElement("div");
-          who.className = "story-card__who";
-          who.textContent = s.parent_name;
-          meta.appendChild(who);
-        }
-        if (s.child_age) {
-          const age = document.createElement("div");
-          age.className = "story-card__age";
-          age.textContent = s.child_age;
-          meta.appendChild(age);
-        }
-
-        if (meta.childNodes.length) body.appendChild(meta);
-
-        if (s.problem) {
-          const p = document.createElement("p");
-          p.className = "story-card__problem";
-          p.textContent = s.problem;
-          body.appendChild(p);
-        }
-        if (s.text) {
-          const t = document.createElement("p");
-          t.className = "story-card__text";
-          t.textContent = s.text;
-          body.appendChild(t);
-        }
-        if (s.recommendation) {
-          const r = document.createElement("p");
-          r.className = "story-card__rec";
-          r.textContent = s.recommendation;
-          body.appendChild(r);
-        }
-
-        card.appendChild(media);
-        card.appendChild(body);
-        grid.appendChild(card);
+        btn.appendChild(thumb);
+        wrap.appendChild(btn);
+        grid.appendChild(wrap);
       });
 
-      moreBtn.hidden = shown >= cleaned.length;
+      if (moreBtn) moreBtn.hidden = shown >= cleaned.length;
     }
 
-    moreBtn.onclick = () => {
-      shown = Math.min(cleaned.length, shown + 6);
-      draw();
-    };
+    if (moreBtn) {
+      moreBtn.onclick = () => {
+        shown = Math.min(cleaned.length, shown + pageSize);
+        draw();
+      };
+    }
 
     draw();
   }
@@ -533,10 +507,11 @@ function applySiteContent(content) {
   }
 
   // Stories
-  setTextIfAny(qs("#stories h2"), content.stories_h2);
-  if (Array.isArray(content.stories_items)) {
-    const initial = Number(content.stories_initial_count || 6) || 6;
-    renderStories(content.stories_items, Math.max(1, Math.min(9, initial)));
+  setTextIfAny(qs("#storiesTitle"), content.stories_h2);
+  if (Array.isArray(content.stories_items)) renderStories(content.stories_items);
+  else {
+    const s = qs("#stories");
+    if (s) s.hidden = true;
   }
 
   // Form block
@@ -641,25 +616,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadContentAndLegal();
 
-  function openMedia(url, kind) {
+  function openMedia(url, kind, titleOverride) {
     if (!mediaDialog || !mediaBody) return;
     const u = String(url || "").trim();
     if (!u) return;
     mediaBody.innerHTML = "";
     const wrap = document.createElement("div");
     wrap.className = "media-view";
+    const customTitle = String(titleOverride || "").trim();
     if (kind === "pdf") {
       const iframe = document.createElement("iframe");
       iframe.src = u;
       iframe.title = "PDF документ";
       wrap.appendChild(iframe);
-      if (mediaTitle) mediaTitle.textContent = "Документ (PDF)";
+      if (mediaTitle) mediaTitle.textContent = customTitle || "Документ (PDF)";
     } else {
       const img = document.createElement("img");
       img.src = u;
-      img.alt = "Документ";
+      img.alt = customTitle || "Документ";
       wrap.appendChild(img);
-      if (mediaTitle) mediaTitle.textContent = "Документ";
+      if (mediaTitle) mediaTitle.textContent = customTitle || "Документ";
     }
     mediaBody.appendChild(wrap);
     mediaDialog.showModal?.();
@@ -674,7 +650,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!btn) return;
     const url = btn.getAttribute("data-media-url");
     const kind = btn.getAttribute("data-media-kind") || "image";
-    openMedia(url, kind);
+    const title = btn.getAttribute("data-media-title") || "";
+    openMedia(url, kind, title);
   });
 
   document.addEventListener("click", (e) => {

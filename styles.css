@@ -585,75 +585,8 @@ html[data-theme="dark"] .diploma-thumb {
   margin-top: 16px;
 }
 
-.story-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: 0 14px 38px rgba(18, 14, 8, 0.08);
-  backdrop-filter: blur(10px);
-  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), border-color 180ms var(--ease-out);
-}
-
-.story-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 22px 55px rgba(18, 14, 8, 0.12);
-  border-color: rgba(194, 132, 102, 0.26);
-}
-
-.story-card__media {
-  aspect-ratio: 16 / 10;
-  background: rgba(31, 29, 25, 0.04);
-  overflow: hidden;
-}
-
-html[data-theme="dark"] .story-card__media {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.story-card__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.story-card__body {
-  padding: 16px 16px 18px;
-}
-
-.story-card__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-  align-items: baseline;
-  margin-bottom: 10px;
-}
-
-.story-card__who {
-  font-weight: 800;
-  color: var(--title);
-}
-
-.story-card__age {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.story-card__problem {
-  font-weight: 700;
-  margin: 0 0 8px;
-}
-
-.story-card__text {
-  color: var(--muted);
-  margin: 0 0 10px;
-}
-
-.story-card__rec {
-  margin: 0;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-  font-weight: 700;
+.story-tile {
+  min-width: 0;
 }
 
 .stories-more {
